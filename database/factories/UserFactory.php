@@ -20,7 +20,7 @@ $factory->define(App\User::class, function (Faker $faker) {
     $password = Hash::make('secret');
 
     if(App\User::where('name','administrator')->count()==0){
-            User::create([
+            App\User::create([
             'name' => 'administrator',
             'email' => 'admin@test.com',
             'password' => $password,

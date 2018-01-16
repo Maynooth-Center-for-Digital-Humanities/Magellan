@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Validator;
 use App\User;
 use Hash;
+use Illuminate\Validation\Rule;
 use App\Entry;
 use Illuminate\Http\Request;
 
@@ -26,6 +27,7 @@ public function accessToken(Request $request)
 
         $user = User::where("email",$request->email)->first();
 
+        //Fabiano: For security reasons let's return only true or false without any hints on the type of error (pwd/username)
 
         if($user){
 
@@ -92,9 +94,20 @@ public function accessToken(Request $request)
 
             $validator = Validator::make($request->all(),[
 
-                'element' => 'required'
-
+                'api_version' => 'required|string|max:255',
+                'collection' => 'required|string|max:255',
+                'copyright_statement' => 'required|string|max:1500',
+                'creator' => 'nullable|string|max:255',
+                'creator_gender' => Rule::in(['Female', 'Male']),
+                'creator_location' => 'string|max:255',
+                'date_created' => 'date|date_format:Y-m-d',
+                'description' => 'string|max:1500',
+                'doc_collection' => 'string|max:255',
+                'language' => 'required|alpha|max:2',
+                'letter_ID' => 'required|integer',
+                'modified_timestamp' => 'date|required|date_format:Y-m-d\TH:i:sP'
             ]);
+
 
             if($validator->fails()){
 
@@ -127,11 +140,13 @@ public function accessToken(Request $request)
 
             ]);
 
+
+
             if($validator->fails()){
 
                 $error = true;
 
-                $errors = $validator->errors();
+                $errors = $validator->errors() . Entry::validate($request->payload())->errors();
 
             }
 
@@ -192,7 +207,7 @@ public function accessToken(Request $request)
 
      *
 
-     * @param  \App\Todo  $todo
+     * @param  \App\Entry  $entry
 
      * @return \Illuminate\Http\Response
 
@@ -200,16 +215,20 @@ public function accessToken(Request $request)
 
     public function show(Request $request, $id)
     {
-        $entry = Entry::where('id',1)->first();
+        $entry = Entry::where('id',$id)->first();
+
+        $msg = "Entry found";
+        $status = true;
+
 
         if( $entry != null) {
             $coll =  $entry;
-        }
-        else {
-            $coll =  "empty bottle";
+        } else {
+            $coll =  "";
+            $msg = "Entry not found";
         };
 
-            return $this->prepareResult(false, $coll, [], "unauthorized","You are not authenticated to view this entry");
+            return $this->prepareResult($status, $coll, [], $msg,"Request complete");
 
     }
 
@@ -223,9 +242,10 @@ public function accessToken(Request $request)
 
         } else {
             $entry = new Entry();
-            $entry->element = json_encode($request->element);
+
+            $entry->element = $request->getContent();
             $entry->save();
-            return $this->prepareResult(true,$entry, $error['errors'],"Todo created");
+            return $this->prepareResult(true,$entry, $error['errors'],"Entry created");
 
         }
 

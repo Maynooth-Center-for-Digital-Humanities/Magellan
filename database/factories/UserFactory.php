@@ -16,6 +16,18 @@ use Faker\Generator as Faker;
 $factory->define(App\User::class, function (Faker $faker) {
     static $password;
 
+
+    $password = Hash::make('secret');
+
+    if(App\User::where('name','administrator')->count()==0){
+            User::create([
+            'name' => 'administrator',
+            'email' => 'admin@test.com',
+            'password' => $password,
+            'remember_token' => str_random(10)
+        ]);
+    }
+
     return [
         'name' => $faker->name,
         'email' => $faker->unique()->safeEmail,

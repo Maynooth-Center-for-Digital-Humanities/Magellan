@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use Validator;
-use App\User as User;
 use Hash;
 use Illuminate\Validation\Rule;
 use App\Entry;
+use App\User;
+use App\EntryFormats as EntryFormats;
 use Illuminate\Http\Request;
 
 
@@ -32,7 +33,6 @@ public function accessToken(Request $request)
         if($user){
 
             if (Hash::check($request->password,$user->password)) {
-
 
                 return $this->prepareResult(true, ["accessToken" => $user->createToken('ApiIngestion')->accessToken], [],"User Verified");
 
@@ -92,42 +92,9 @@ public function accessToken(Request $request)
 
         }elseif($type == "create entry"){
 
-            $validator = Validator::make($request->all(),[
-                'api_version' => 'required|string|max:255',
-                'collection' => 'required|string|max:255',
-                'copyright_statement' => 'required|string|max:1500',
-                'creator' => 'nullable|string|max:255',
-                'creator_gender' => Rule::in(['Female', 'Male']),
-                'creator_location' => 'string|max:255',
-                'date_created' => 'date|date_format:Y-m-d',
-                'description' => 'string|max:1500',
-                'doc_collection' => 'string|max:255',
-                'language' => 'required|alpha|max:2',
-                'letter_ID' => 'required|integer',
-                'modified_timestamp' => 'date|required|date_format:Y-m-d\TH:i:sP',
-                'number_pages'=>'required|integer',
-                'pages.*.archive_filename'=>'required|max:255',
-                'pages.*.contributor'=>'required|max:255',
-                'pages.*.doc_collection_identifier'=>'required|max:500',
-                'pages.*.last_rev_timestamp'=>'date|required|date_format:Y-m-d\TH:i:sP',
-                'pages.*.original_filename'=>'required|max:255',
-                'pages.*.page_count'=>'required|integer',
-                'pages.*.page_id'=>'required|integer',
-                'pages.*.rev_ID'=>'required|integer',
-                'pages.*.rev_name'=>'required|max:255',
-                'pages.*.transcription'=>'required|max:1500',
-                'recipient'=>'required|max:255',
-                'recipient_location'=>'required|max:255',
-                'request_time'=>'date|required|date_format:Y-m-d\TH:i:sP',
-                'source'=>'required|max:255',
-                'terms_of_use'=>'required|max:1',
-                'time_zone'=>'required|max:255',
-                'topics.*.topic_ID'=>'required|integer',
-                'topics.*.topic_name'=>'required|max:255',
-                'type'=>'required|max:255',
-                'user_id'=>'required|max:15',
-                'year_of_death_of_author'=>'required|max:4',
-            ]);
+            $entry_format_validator =  EntryFormats\Factory::create($request->getContent());
+
+            $validator = Validator::make($request->all(),$entry_format_validator->getValidatorSpec());
 
 
             if($validator->fails()){

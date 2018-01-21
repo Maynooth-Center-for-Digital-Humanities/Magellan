@@ -1,6 +1,7 @@
 <?php
 
 use Faker\Generator as Faker;
+use App\User as User;
 
 
 $factory->define(App\Entry::class, function (Faker $faker) {
@@ -33,6 +34,7 @@ $factory->define(App\Entry::class, function (Faker $faker) {
     }
 
     return [
+        'user_id' => User::find(1)->id,
         'element' =>json_encode([
                 'api_version' => $faker->randomFloat($nbMaxDecimals = 2, $min = 0, $max = 10),
                 'collection' => $faker->sentence($nbWords = 3, $variableNbWords = true),

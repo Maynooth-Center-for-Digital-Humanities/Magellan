@@ -3,7 +3,11 @@
 namespace App\Exceptions;
 
 use Exception;
+use http\Exception\InvalidArgumentException;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Symfony\Component\Routing\Exception\MethodNotAllowedException;
 
 class Handler extends ExceptionHandler
 {
@@ -48,6 +52,16 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Exception $exception)
     {
+
+        if ($exception instanceof AuthenticationException) {
+            return response()->view('exceptions', ['exc' =>'Unauthorized Request'], 401);
+        }
+
+        if ($exception instanceof MethodNotAllowedHttpException) {
+            return response()->view('exceptions', ['exc' =>'Method Not Allowed'], 405);
+        }
+
         return parent::render($request, $exception);
+
     }
 }

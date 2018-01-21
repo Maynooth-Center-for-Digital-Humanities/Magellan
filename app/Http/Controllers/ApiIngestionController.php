@@ -51,6 +51,23 @@ public function accessToken(Request $request)
 
 
     }
+
+
+
+    public function resetAccessToke($Request){
+
+
+        $user = Auth::guard('api')->user();
+
+        if ($user) {
+            $user->api_token = null;
+            $user->save();
+        }
+
+        return $this->prepareResult(true, [], ["user" => "User logout"],"User logout");
+
+
+    }
     /**
 
      * Get a validator for an incoming ApiIngestion request.
@@ -90,7 +107,7 @@ public function accessToken(Request $request)
 
             }
 
-        }elseif($type == "create entry"){
+        }  elseif($type == "create entry"){
 
             $entry_format_validator =  EntryFormats\Factory::create($request->getContent());
 

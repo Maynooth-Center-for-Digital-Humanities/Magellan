@@ -17,6 +17,9 @@ class CreateEntryTable extends Migration
             $table->increments('id');
             $table->timestamps();
             $table->json('element');
+            $table->unsignedInteger('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
+
         });
     }
 

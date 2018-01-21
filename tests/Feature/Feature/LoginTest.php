@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Feature;
 
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Tests\TestCase;
+
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -13,6 +15,8 @@ class LoginTest extends TestCase
      *
      * @return void
      */
+
+
     public function testExample()
     {
         $this->assertTrue(true);
@@ -27,12 +31,15 @@ class LoginTest extends TestCase
 
     public function testRequiresEmailAndLoginUnsuccessful()
     {
+
         $this->json('POST', 'api/login')
             ->assertStatus(405);
+
     }
 
     public function testRequiresEmailAndLoginSuccessful()
     {
+        //$this->printThis($this->json('GET', 'api/login', ['email' =>'admin@test.com','password'=>'secret'])->getContent());
         $this->json('GET', 'api/login', ['email' =>'admin@test.com','password'=>'secret'])
             ->assertStatus(200);
     }

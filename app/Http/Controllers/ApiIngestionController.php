@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Auth;
 use Validator;
 use Hash;
 use Illuminate\Validation\Rule;
@@ -54,14 +55,14 @@ public function accessToken(Request $request)
 
 
 
-    public function resetAccessToke($Request){
+    public function resetAccessToken(){
 
 
-        $user = Auth::guard('api')->user();
+        $user = Auth::user();
 
         if ($user) {
-            $user->api_token = null;
-            $user->save();
+            Auth::user()->token()->revoke();
+            Auth::user()->token()->delete();
         }
 
         return $this->prepareResult(true, [], ["user" => "User logout"],"User logout");

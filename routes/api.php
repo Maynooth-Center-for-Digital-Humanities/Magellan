@@ -23,6 +23,8 @@ Route::group(['middleware' => ['api','auth:api']], function()
 
     Route::get('/show/{id}','ApiIngestionController@show');
 
+    Route::get('/logout/','ApiIngestionController@resetAccessToken');
+
 });
 
 

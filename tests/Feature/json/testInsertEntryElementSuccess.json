@@ -1,0 +1,59 @@
+{
+  "api_version": "1.0",
+  "collection": "Easter Rising Ireland 1916",
+  "collection_ID": 1,
+  "copyright_statement": "you have the rights to upload the Material in question for use or you have the permission of the relevant rightholder(s) to do so as outlined in the <a href='http:\\/\\/letters1916.maynoothuniversity.ie\\/about\\/copyright'>Letters of 1916 Terms for User Contributions<\\/a>",
+  "creator": "P.H. Pearse",
+  "creator_gender": "Male",
+  "creator_location": "Irish Volunteers Dublin Brigade.",
+  "date_created": "1916-04-20",
+  "debug": "",
+  "description": "This is a mobilisation order for the 4th Battalion of the  Irish Volunteers, Dublin Brigade, assembling at Rathfarnham Chapel on Easter Sunday, 1916, at 2.45pm. It specifies the equipment, arms, and rations to be carried and advises that anybody who has a bicycle or motor cycle should bring it.\\r\\n\\r\\nPatrick Pearse (1879-1916), was a writer, a teacher and one of the leaders of the Easter Rising, 1916. He was a key member of the IRB military council, a signatory of the proclamation of the Irish Republic (which he read outside the GPO). As president of the provisional government, it was Pearse who called the surrender. He along with 15 others, was executed shortly after surrender.",
+  "doc_collection": "Bureau of Military History Contemporary Documents, Brother Allen Collection BMH CD\\/75\\/1",
+  "language": "EN",
+  "letter_ID": "1102",
+  "modified_timestamp": "2018-01-16T10:34:05+00:00",
+  "number_pages": 2,
+  "pages": [{
+    "archive_filename": "4d23006adbe8d8abf65bb7dc024c73c7.jpg",
+    "contributor": "NealeRo",
+    "doc_collection_identifier": "NAI\\/CSO\\/RP\\/1916\\/5611\\/8166\\/1",
+    "last_rev_timestamp": "2018-01-16T10:34:10+00:00",
+    "original_filename": "BMH_CD_075_1_1.jpg",
+    "page_count": 1,
+    "page_id": 2911,
+    "rev_ID": 1946,
+    "rev_name": "FP",
+    "transcription": "<address>F. Sheridan\\n<lb\\/>Rathfarnham.<\\/address>"
+  }, {
+    "archive_filename": "539e0df786601bf95feeff98174d65db.jpg",
+    "contributor": "NealeRo",
+    "doc_collection_identifier": "John Redmond Papers, Collection List No. 118; Ms. 15,171\\/1",
+    "last_rev_timestamp": "2018-01-16T10:34:10+00:00",
+    "original_filename": "BMH_CD_075_1_1env.jpg",
+    "page_count": 2,
+    "page_id": 2912,
+    "rev_ID": 1946,
+    "rev_name": "FP",
+    "transcription": "<address>F. Sheridan\\n<lb\\/>Rathfarnham.<\\/address>"
+  }],
+  "recipient": "F. Sheridan",
+  "recipient_location": "Rathfarnham, Dublin, Ireland.",
+  "request_time": "2018-01-16T10:34:10+00:00",
+  "source": "Military Archives of Ireland.",
+  "terms_of_use": "1",
+  "time_zone": "Europe\\/Dublin",
+  "topics": [{
+    "topic_ID": 100,
+    "topic_name": "Civil War"
+  }, {
+    "topic_ID": 102,
+    "topic_name": "War of Independence"
+  }, {
+    "topic_ID": 104,
+    "topic_name": "The Rising Tide"
+  }],
+  "type": "omeka",
+  "user_id": 137,
+  "year_of_death_of_author": "1916"
+}

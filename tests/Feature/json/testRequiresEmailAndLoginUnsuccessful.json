@@ -1,0 +1,13 @@
+{
+  "status": false,
+  "data": [],
+  "message": "Error while validating user",
+  "errors": {
+    "email": [
+      "The email field is required."
+    ],
+    "password": [
+      "The password field is required."
+    ]
+  }
+}

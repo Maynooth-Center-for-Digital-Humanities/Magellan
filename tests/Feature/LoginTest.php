@@ -31,9 +31,26 @@ class LoginTest extends TestCase
 
     public function testRequiresEmailAndLoginUnsuccessful()
     {
+       /* $u_login="{
+    \"status\": false,
+    \"data\": [],
+    \"message\": \"Error while validating user\",
+    \"errors\": {
+        \"email\": [
+            \"The email field is required.\"
+        ],
+        \"password\": [
+            \"The password field is required.\"
+        ]
+    }
+}";*/
+        $fcontent = file_get_contents(dirname(__DIR__) . "/Feature/json/testRequiresEmailAndLoginUnsuccessful.json");
+        $test_json=json_decode($fcontent,true);
 
-        $this->json('POST', 'api/login')
-            ->assertStatus(405);
+        echo $this->json('GET', 'api/login')->getContent();
+        $this->json('GET', 'api/login')
+            ->assertStatus(400)
+            ->assertJson($test_json);
 
     }
 

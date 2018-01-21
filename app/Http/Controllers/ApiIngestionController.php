@@ -12,6 +12,7 @@ use App\EntryFormats as EntryFormats;
 use Illuminate\Http\Request;
 
 
+
 class ApiIngestionController extends Controller
 {
 
@@ -23,7 +24,7 @@ public function accessToken(Request $request)
 
         if($validate["error"]){
 
-            return $this->prepareResult(false, [], $validate['errors'],"Error while validating user");
+           return \Response::json($this->prepareResult(false, [], $validate['errors'],"Error while validating user"),400);
 
         }
 
@@ -177,7 +178,6 @@ public function accessToken(Request $request)
     private function prepareResult($status, $data, $errors,$msg)
 
     {
-
         return ['status' => $status,'data'=> $data,'message' => $msg,'errors' => $errors];
 
     }

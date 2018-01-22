@@ -14,8 +14,8 @@ class Factory
 
     public static function create($json,$locale='')
     {
-        $provider_name=json_decode($json)->type;
 
+        $provider_name=json_decode($json)->type;
 
         $provider = self::findProviderClassname($provider_name,$locale);
 

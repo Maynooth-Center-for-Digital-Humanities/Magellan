@@ -29,6 +29,13 @@ class LoginTest extends TestCase
         $response->assertStatus(200);
     }
 
+    public function testNotFoundTest()
+    {
+        $response = $this->get('/cavakdkd');
+
+        $response->assertStatus(404);
+    }
+
     /**
      * TEST REQUIREMENT FOR LOGIN
      *

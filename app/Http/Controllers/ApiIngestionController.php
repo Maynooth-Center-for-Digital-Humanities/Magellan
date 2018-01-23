@@ -228,7 +228,7 @@ public function accessToken(Request $request)
 
 
         if( $entry != null) {
-            $coll =  $entry;
+            $coll =  json_decode($entry->element,true);
         } else {
             $coll =  "";
             $msg = "Entry not found";
@@ -248,7 +248,6 @@ public function accessToken(Request $request)
 
         } else {
             $entry = new Entry();
-
             $entry->element = $request->getContent();
             $entry->user_id = Auth::user()->id;
             $entry->save();

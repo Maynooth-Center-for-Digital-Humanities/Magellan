@@ -1,7 +1,7 @@
 <?php
 
 use Faker\Generator as Faker;
-use App\Role;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -15,23 +15,11 @@ use App\Role;
 */
 
 $factory->define(App\User::class, function (Faker $faker) {
-    static $password;
 
+    static $password;
 
     $password = Hash::make('secret');
 
-    $role_admin = App\Role::where('name','admin')->first();
-
-    if(App\User::where('name','administrator')->count()==0){
-            $user = App\User::create([
-            'name' => 'administrator',
-            'email' => 'admin@test.com',
-            'password' => $password,
-            'remember_token' => str_random(10),
-        ]);
-            $user->roles()->attach($role_admin);
-
-    }
 
     return [
         'name' => $faker->name,

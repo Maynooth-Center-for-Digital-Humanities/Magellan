@@ -10,6 +10,7 @@ namespace App\EntryFormats\Provider\omeka;
 
 use Illuminate\Validation\Rule as Rule;
 use App\EntryFormats\EntryFormatInterface as EntryFormatInterface;
+use App\Topic as Topic;
 
 class EntryFormat implements EntryFormatInterface
 {
@@ -69,6 +70,16 @@ class EntryFormat implements EntryFormatInterface
     }
     public function validateArray($array,$parent){
         return null;
+    }
+
+    public function saveCollateralEntities($entry){
+
+        $topic = $entry->topics;
+        $tp = new Topic();
+        $tp->name = $topic->name;
+        $tp->topic_id = $topic->topic_ID;
+        $tp->save();
+
     }
 
     public function valid($json){

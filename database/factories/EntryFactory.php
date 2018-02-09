@@ -2,12 +2,12 @@
 
 use Faker\Generator as Faker;
 use App\User as User;
+use App\Topic as Topic;
 
 
 $factory->define(App\Entry::class, function (Faker $faker) {
 
     $pages="";
-    $topics="";
 
     for($i=0; $i < $faker->randomDigit; $i++){
         $pages = json_encode([
@@ -25,11 +25,17 @@ $factory->define(App\Entry::class, function (Faker $faker) {
 
     }
 
+    $topics = array();
+
     for($i=0; $i < $faker->randomDigit; $i++){
-        $topics = json_encode([
-            'topic_ID'=> $faker->numberBetween($min = 1000, $max = 9000),
-            'topic_name'=>$faker->sentence($nbWords = 3, $variableNbWords = true),
-        ]);
+
+        $topic_id = Topic::inRandomOrder()->first()->id;
+        $topic = Topic::where('id',$topic_id)->select('name')->first()->name;
+
+        array_push($topics, array(
+            'topic_ID'=> $topic_id,
+            'topic_name'=>$topic
+        ));
 
     }
 
@@ -56,8 +62,8 @@ $factory->define(App\Entry::class, function (Faker $faker) {
                 'source'=>$faker->slug,
                 'terms_of_use'=> $faker->randomDigitNotNull,
                 'time_zone'=> $faker->timezone,
-                'topics'=> $topics,
                 'type'=>'test_factory',
+                'topics'=> json_encode($topics),
                 'user_id'=>$faker->randomNumber($nbDigits = NULL, $strict = false),
                 'year_of_death_of_author' => $faker->year($max = 'now')
             ])

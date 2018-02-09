@@ -26,7 +26,7 @@ Route::group(['middleware' => ['api','auth:api']], function()
     Route::get('/index/','ApiIngestionController@index');
 
     Route::get('/show/{id}','ApiIngestionController@show');
-    
+
 
 
 Route::middleware('auth:api')->get('/user', function (Request $request) {

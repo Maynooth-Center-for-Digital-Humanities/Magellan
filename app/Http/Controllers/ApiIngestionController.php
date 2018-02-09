@@ -251,6 +251,7 @@ public function accessToken(Request $request)
             $entry->element = $request->getContent();
             $entry->user_id = Auth::user()->id;
             $entry->save();
+
             return $this->prepareResult(true,$entry, $error['errors'],"Entry created");
 
         }

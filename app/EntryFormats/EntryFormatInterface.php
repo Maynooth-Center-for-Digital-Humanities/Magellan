@@ -15,5 +15,6 @@ interface EntryFormatInterface {
     public function validateText($text,$parent);
     public function getConstrainedArrayFields($parent);
     public function validateArray($array,$parent);
+    public function saveCollateralEntities($entry);
     public function valid($json);
 }

@@ -18,7 +18,9 @@ class CreateEntryTable extends Migration
             $table->timestamps();
             $table->json('element');
             $table->unsignedInteger('user_id');
+            $table->boolean('current_version');
             $table->foreign('user_id')->references('id')->on('users');
+            $table->index('current_version');
 
         });
     }
@@ -30,6 +32,10 @@ class CreateEntryTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('entry');
+        Schema::table('entry', function (Blueprint $table) {
+            $table->dropIndex(['current_version']); // Drops index 'current_version'
+        });
+
+        Schema::drop('entry');
     }
 }

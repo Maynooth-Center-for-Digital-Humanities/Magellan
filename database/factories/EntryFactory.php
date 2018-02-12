@@ -2,12 +2,12 @@
 
 use Faker\Generator as Faker;
 use App\User as User;
+use App\Topic as Topic;
 
 
 $factory->define(App\Entry::class, function (Faker $faker) {
 
     $pages="";
-    $topics="";
 
     for($i=0; $i < $faker->randomDigit; $i++){
         $pages = json_encode([
@@ -20,24 +20,37 @@ $factory->define(App\Entry::class, function (Faker $faker) {
             'page_id'=> $faker->numberBetween($min = 1000, $max = 9000),
             'rev_ID'=> $faker->numberBetween($min = 1000, $max = 9000),
             'rev_name'=> $faker->name,
-            'transcription'=> $faker->randomHtml(2,3)
+            'transcription'=> $faker->randomHtml(2,2)
         ]);
 
     }
 
-    for($i=0; $i < $faker->randomDigit; $i++){
-        $topics = json_encode([
-            'topic_ID'=> $faker->numberBetween($min = 1000, $max = 9000),
-            'topic_name'=>$faker->sentence($nbWords = 3, $variableNbWords = true),
-        ]);
+    $topics_list = Topic::all();
+    $topics = array();
+
+
+    for($i=0; $i < $faker->numberBetween($min = 10, $max = 20); $i++){
+
+        $rnd_number=$faker->numberBetween($min = 0, $max = count($topics_list)-1);
+
+        array_push($topics, array(
+            'topic_ID'=> $topics_list[$rnd_number]->topic_id,
+            'topic_name'=>$topics_list[$rnd_number]->name
+        ));
 
     }
 
-    return [
-        'user_id' => User::inRandomOrder()->first(),
-        'element' =>json_encode([
+    // Handle the current version option
+
+    $letter_id = $faker->numberBetween($min = 100, $max = 150);
+    $current_version = DB::table('entry')->where('current_version',TRUE)->where('element->letter_ID', $letter_id)->count() > 0 ? FALSE : TRUE;
+
+    return ['user_id' => User::inRandomOrder()->first(),
+        'current_version' => $current_version,
+        'element'=>json_encode([
                 'api_version' => $faker->randomFloat($nbMaxDecimals = 2, $min = 0, $max = 10),
                 'collection' => $faker->sentence($nbWords = 3, $variableNbWords = true),
+                'title' => $faker->sentence($nbWords = 10, $variableNbWords = true),
                 'copyright_statement' => $faker->text($maxNbChars = 400),
                 'creator' => $faker->name,
                 'creator_gender' => $faker->randomElement($array = array ('Female', 'Male')),
@@ -46,7 +59,7 @@ $factory->define(App\Entry::class, function (Faker $faker) {
                 'description' => $faker->text($maxNbChars = 1000),
                 'doc_collection' => $faker->slug,
                 'language' => $faker->languageCode,
-                'letter_ID' => $faker->numberBetween($min = 1000, $max = 9000),
+                'letter_ID' => $letter_id,
                 'modified_timestamp' => $faker->datetime($max = 'now')->format(DateTime::ATOM),
                 'number_pages'=>$faker->numberBetween($min = 1, $max = 100),
                 'pages'=>$pages,
@@ -56,11 +69,10 @@ $factory->define(App\Entry::class, function (Faker $faker) {
                 'source'=>$faker->slug,
                 'terms_of_use'=> $faker->randomDigitNotNull,
                 'time_zone'=> $faker->timezone,
-                'topics'=> $topics,
                 'type'=>'test_factory',
+                'topics'=> json_encode($topics),
                 'user_id'=>$faker->randomNumber($nbDigits = NULL, $strict = false),
                 'year_of_death_of_author' => $faker->year($max = 'now')
-            ])
-    ];
+            ])];
 
 });

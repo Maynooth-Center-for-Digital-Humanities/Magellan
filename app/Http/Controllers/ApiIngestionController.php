@@ -111,7 +111,11 @@ public function accessToken(Request $request)
 
         }  elseif($type == "create entry"){
 
-            $entry_format_validator =  EntryFormats\Factory::create($request->getContent());
+            $entry = new Entry();
+            $entry->element = $request->getContent();
+            $entry->user_id = Auth::user()->id;
+
+            $entry_format_validator =  EntryFormats\Factory::create($entry);
 
             $validator = Validator::make($request->all(),$entry_format_validator->getValidatorSpec());
 
@@ -240,6 +244,9 @@ public function accessToken(Request $request)
         } else {
             $coll =  "";
             $msg = "Entry not found";
+            $status = false;
+
+            abort(404, json_encode($this->prepareResult($status, $coll, [], $msg,"Request failed")));
         };
 
             return $this->prepareResult($status, $coll, [], $msg,"Request complete");
@@ -259,6 +266,7 @@ public function accessToken(Request $request)
             $entry->element = $request->getContent();
             $entry->user_id = Auth::user()->id;
             $entry->save();
+
             return $this->prepareResult(true,$entry, $error['errors'],"Entry created");
 
         }

@@ -11,8 +11,12 @@ namespace App\EntryFormats\Provider\test_factory;
 use Illuminate\Validation\Rule as Rule;
 use App\EntryFormats\EntryFormatInterface as EntryFormatInterface;
 
+use App\EntryFormats\Drivers\SaveOnDatabaseTrait as SaveOnDatabaseTrait;
+
 class EntryFormat implements EntryFormatInterface
 {
+    use SaveOnDatabaseTrait;
+
     protected $spec = [
         'api_version' => 'required|max:255',
         'collection' => 'required|string|max:255',
@@ -23,6 +27,7 @@ class EntryFormat implements EntryFormatInterface
         'date_created' => 'date|date_format:Y-m-d',
         'description' => 'string|max:1500',
         'doc_collection' => 'string|max:255',
+        'title' => 'required|string|max:500',
         'language' => 'required|alpha|max:255',
         'letter_ID' => 'required|integer',
         'modified_timestamp' => 'date|required|date_format:Y-m-d\TH:i:sP',

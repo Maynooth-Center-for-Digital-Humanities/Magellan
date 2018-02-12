@@ -26,8 +26,8 @@ class EntryApiInsertViewDeleteTest extends TestCase
      */
     public function testInsertTestFail()
     {
-        $response = $this->get('/api/show/1/');
-        $response->assertStatus(401);
+        $response = $this->get('/api/show/0/');
+        $response->assertStatus(404);
     }
 
     public function testInsertEntryCorrectly()

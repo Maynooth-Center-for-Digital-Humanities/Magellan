@@ -10,10 +10,13 @@ namespace App\EntryFormats\Provider\omeka;
 
 use Illuminate\Validation\Rule as Rule;
 use App\EntryFormats\EntryFormatInterface as EntryFormatInterface;
-use App\Topic as Topic;
+
+use App\EntryFormats\Drivers\SaveOnDatabaseTrait as SaveOnDatabaseTrait;
 
 class EntryFormat implements EntryFormatInterface
 {
+    use SaveOnDatabaseTrait;
+
     protected $spec = [
         'api_version' => 'required|string|max:255',
         'collection' => 'required|string|max:255',
@@ -28,6 +31,7 @@ class EntryFormat implements EntryFormatInterface
         'letter_ID' => 'required|integer',
         'modified_timestamp' => 'date|required|date_format:Y-m-d\TH:i:sP',
         'number_pages'=>'required|integer',
+        'title' => 'required|string|max:500',
         'pages.*.archive_filename'=>'required|max:255',
         'pages.*.contributor'=>'required|max:255',
         'pages.*.doc_collection_identifier'=>'required|max:500',
@@ -70,16 +74,6 @@ class EntryFormat implements EntryFormatInterface
     }
     public function validateArray($array,$parent){
         return null;
-    }
-
-    public function saveCollateralEntities($entry){
-
-        $topic = $entry->topics;
-        $tp = new Topic();
-        $tp->name = $topic->name;
-        $tp->topic_id = $topic->topic_ID;
-        $tp->save();
-
     }
 
     public function valid($json){

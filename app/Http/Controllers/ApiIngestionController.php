@@ -257,6 +257,7 @@ public function accessToken(Request $request)
             $entry = new Entry();
             $entry->element = $request->getContent();
             $entry->user_id = Auth::user()->id;
+            $entry->current_version = Entry::where('current_version',TRUE)->where('element->letter_ID', $request->letter_ID)->count() > 0 ? FALSE : TRUE;
             $entry->save();
 
             return $this->prepareResult(true,$entry, $error['errors'],"Entry created");

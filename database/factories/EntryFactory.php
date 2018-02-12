@@ -7,27 +7,28 @@ use App\Topic as Topic;
 
 $factory->define(App\Entry::class, function (Faker $faker) {
 
-    $pages="";
+    $pages=array();
 
     for($i=0; $i < $faker->randomDigit; $i++){
-        $pages = json_encode([
-            'archive_filename'=> $faker->macAddress.".jpg",
-            'contributor'=>$faker->name,
-            'doc_collection_identifier'=>$faker->macAddress,
-            'last_rev_timestamp'=>$faker->datetime($max = 'now')->format(DateTime::ATOM),
-            'original_filename'=>$faker->macAddress.".jpg",
-            'page_count'=> $faker->numberBetween($min = 1, $max = 20),
-            'page_id'=> $faker->numberBetween($min = 1000, $max = 9000),
-            'rev_ID'=> $faker->numberBetween($min = 1000, $max = 9000),
-            'rev_name'=> $faker->name,
-            'transcription'=> $faker->randomHtml(2,2)
-        ]);
+            array_push($pages,
+                array([
+                        'archive_filename'=> $faker->macAddress.".jpg",
+                        'contributor'=>$faker->name,
+                        'doc_collection_identifier'=>$faker->macAddress,
+                        'last_rev_timestamp'=>$faker->datetime($max = 'now')->format(DateTime::ATOM),
+                        'original_filename'=>$faker->macAddress.".jpg",
+                        'page_count'=> $faker->numberBetween($min = 1, $max = 20),
+                        'page_id'=> $faker->numberBetween($min = 1000, $max = 9000),
+                        'rev_ID'=> $faker->numberBetween($min = 1000, $max = 9000),
+                        'rev_name'=> $faker->name,
+                            'transcription'=> $faker->randomHtml(2,2)
+                ]));
 
     }
 
     $topics_list = Topic::all();
-    $topics = array();
 
+    $topics = array();
 
     for($i=0; $i < $faker->numberBetween($min = 10, $max = 20); $i++){
 
@@ -70,7 +71,7 @@ $factory->define(App\Entry::class, function (Faker $faker) {
                 'terms_of_use'=> $faker->randomDigitNotNull,
                 'time_zone'=> $faker->timezone,
                 'type'=>'test_factory',
-                'topics'=> json_encode($topics),
+                'topics'=> $topics,
                 'user_id'=>$faker->randomNumber($nbDigits = NULL, $strict = false),
                 'year_of_death_of_author' => $faker->year($max = 'now')
             ])];

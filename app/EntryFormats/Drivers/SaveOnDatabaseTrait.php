@@ -14,26 +14,28 @@ trait SaveOnDatabaseTrait
 {
     public function saveCollateralEntities($entry){
 
+        $single_element= json_decode($entry->element);
 
-        $single_element = json_decode($entry->element);
+        $all_topics=$single_element->topics;
 
-        $all_topics=json_decode($single_element->topics);
+
 
         foreach($all_topics as $topic){
 
             $find_topic_name = Topic::where('topic_id',$topic->topic_ID)->first();
             $find_topic_ID = Topic::where('name',$topic->topic_name)->first();
 
-            $equally_null = (($find_topic_name = $find_topic_ID) and is_null($find_topic_ID) ? true : false );
+            $equally_null = (($find_topic_name == $find_topic_ID) and is_null($find_topic_ID) ? true : false );
 
             if($equally_null){
                 $tp = new Topic();
-                $tp->name = $topic->name;
+                $tp->name = $topic->topic_name;
                 $tp->topic_id = $topic->topic_ID;
+                $tp->description = "";
                 $tp->count = 1;
                 $tp->save();
 
-            }elseif ($find_topic_name->id = $find_topic_ID->id){
+            }elseif (isset($find_topic_name->id) && isset($find_topic_ID->id) && ($find_topic_name->id==$find_topic_ID->id)){
 
                 $tp = $find_topic_ID;
 

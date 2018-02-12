@@ -198,10 +198,18 @@ public function accessToken(Request $request)
     {
 
         if(Entry::first() != null) {
-                           $coll =  Entry::all();
-                        } else {
-                             $coll =  "empty bottle";
-                            };
+          $sort = "asc";
+          $paginate = 10;
+          if ($request->input('sort')!=="") {
+            $sort = $request->input('sort');
+          }
+          if ($request->input('paginate')!=="") {
+            $paginate = $request->input('paginate');
+          }
+           $coll =  Entry::orderBy('created_at', $sort)->paginate($paginate);
+        } else {
+          $coll =  "empty bottle";
+        };
 
         return $this->prepareResult(true,$coll,[],"All user entries");
 

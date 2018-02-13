@@ -12,7 +12,7 @@ class EntryTableSeeder extends Seeder
      */
     public function run()
     {
-        $entry = factory(Entry::class, 1000)->create();
+        $entry = factory(Entry::class, 5000)->create();
         $this->command->info('Entry table seeded!');
     }
 }

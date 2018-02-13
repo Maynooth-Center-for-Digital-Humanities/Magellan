@@ -43,9 +43,8 @@ $factory->define(App\Entry::class, function (Faker $faker) {
 
     // Handle the current version option
 
-    $letter_id = $faker->numberBetween($min = 100, $max = 150);
-    $current_version = DB::table('entry')->where('current_version',TRUE)->where('element->letter_ID', $letter_id)->count() > 0 ? FALSE : TRUE;
-
+    $letter_id = $faker->numberBetween($min = 100, $max = 105);
+    $current_version = FALSE;
     return ['user_id' => User::inRandomOrder()->first(),
         'current_version' => $current_version,
         'element'=>json_encode([

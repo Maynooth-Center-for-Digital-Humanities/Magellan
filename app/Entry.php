@@ -25,6 +25,11 @@ class Entry extends Model
         return $this->belongsToMany('App\Topic')->using('App\EntryTopic')->withTimestamps();
     }
 
+    public function pages()
+    {
+        return $this->hasMany('App\Pages');
+    }
+
     public function afterSave($entry)
     {
         $entry_format =  EntryFormats\Factory::create($entry);

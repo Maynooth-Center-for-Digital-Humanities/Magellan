@@ -25,7 +25,7 @@ class UsersTableSeeder extends Seeder
 
         }
 
-        $users = factory('App\User', 50)->create();
+        $users = factory('App\User', 100)->create();
 
         App\User::all()->each(function ($user) {
             $user->roles()->attach(App\Role::inRandomOrder()->get());

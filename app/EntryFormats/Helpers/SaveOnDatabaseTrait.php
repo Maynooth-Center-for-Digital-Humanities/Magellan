@@ -6,19 +6,51 @@
  * Time: 06:56
  */
 
-namespace App\EntryFormats\Drivers;
+namespace App\EntryFormats\Helpers;
 
 use App\Topic as Topic;
+use App\Pages as Pages;
 
 trait SaveOnDatabaseTrait
 {
+
     public function saveCollateralEntities($entry){
 
         $single_element= json_decode($entry->element);
 
-        $all_topics=$single_element->topics;
+        $this->saveTopics($single_element->topics,$entry);
+
+        $this->savePages($single_element->pages,$entry,$single_element->title,$single_element->description);
 
 
+
+        return true;
+
+    }
+
+    private function savePages($all_pages,$entry,$title,$description){
+
+
+        $transcription="";
+        $pgn=0;
+        foreach($all_pages as $page){
+            $transcription.= " ".strip_tags($page->transcription);
+            $pgn++;
+        }
+
+        $find_page = Pages::where('entry_id',$entry->id)->delete();
+
+        $pg = new Pages();
+        $pg->title = $title;
+        $pg->description=$description;
+        $pg->text_body=$transcription;
+        $pg->page_number=$pgn;
+        $pg->entry_id=$entry->id;
+        $pg->save();
+
+    }
+
+    private function saveTopics($all_topics,$entry){
 
         foreach($all_topics as $topic){
 

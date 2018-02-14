@@ -3,6 +3,7 @@
 use Illuminate\Database\Seeder;
 use App\Entry;
 
+
 class EntryTableSeeder extends Seeder
 {
     /**
@@ -12,6 +13,7 @@ class EntryTableSeeder extends Seeder
      */
     public function run()
     {
+
         $entry = factory(Entry::class, 100)->create();
         $this->command->info('Entry table seeded!');
     }

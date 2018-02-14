@@ -11,7 +11,7 @@ $factory->define(App\Entry::class, function (Faker $faker) {
 
     for($i=0; $i < $faker->randomDigit; $i++){
             array_push($pages,
-                array([
+                array(
                         'archive_filename'=> $faker->macAddress.".jpg",
                         'contributor'=>$faker->name,
                         'doc_collection_identifier'=>$faker->macAddress,
@@ -22,7 +22,7 @@ $factory->define(App\Entry::class, function (Faker $faker) {
                         'rev_ID'=> $faker->numberBetween($min = 1000, $max = 9000),
                         'rev_name'=> $faker->name,
                             'transcription'=> $faker->randomHtml(2,2)
-                ]));
+                ));
 
     }
 

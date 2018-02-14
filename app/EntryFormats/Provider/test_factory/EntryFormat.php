@@ -11,7 +11,7 @@ namespace App\EntryFormats\Provider\test_factory;
 use Illuminate\Validation\Rule as Rule;
 use App\EntryFormats\EntryFormatInterface as EntryFormatInterface;
 
-use App\EntryFormats\Drivers\SaveOnDatabaseTrait as SaveOnDatabaseTrait;
+use App\EntryFormats\Helpers\SaveOnDatabaseTrait as SaveOnDatabaseTrait;
 
 class EntryFormat implements EntryFormatInterface
 {

@@ -8,6 +8,8 @@ use Hash;
 use Illuminate\Validation\Rule;
 use App\Entry;
 use App\User;
+use DB;
+use App\Pages as Pages;
 use App\EntryFormats as EntryFormats;
 use Illuminate\Http\Request;
 
@@ -271,6 +273,25 @@ public function accessToken(Request $request)
             return $this->prepareResult(true,$entry, $error['errors'],"Entry created");
 
         }
+
+    }
+
+    public function fullsearch(Request $request, $sentence){
+
+        $sanitize_sentence = filter_var($sentence, FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH);
+
+        $match_sql = "match(title,description,text_body) against ('$sanitize_sentence' in boolean mode)";
+
+        $results = Pages::select('entry_id','title','description',DB::raw($match_sql."as score"))
+            ->whereRaw($match_sql)
+            ->orderBy('score', 'desc')->limit(25)->get();
+
+        return $this->prepareResult(true,$results, $sanitize_sentence,"Results created");
+
+
+    }
+
+    public function search(Request $request, $expr){
 
     }
 

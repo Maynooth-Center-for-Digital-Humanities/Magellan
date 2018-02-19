@@ -200,26 +200,26 @@ public function accessToken(Request $request)
 
      */
 
-    public function index(Request $request)
-    {
+     public function index(Request $request)
+     {
 
-        if(Entry::first() != null) {
-          $sort = "asc";
-          $paginate = 10;
-          if ($request->input('sort')!=="") {
-            $sort = $request->input('sort');
-          }
-          if ($request->input('paginate')!=="") {
-            $paginate = $request->input('paginate');
-          }
-           $coll =  Entry::orderBy('created_at', $sort)->paginate($paginate);
-        } else {
-          $coll =  "empty bottle";
-        };
+         if(Entry::first() != null) {
+           $sort = "asc";
+           $paginate = 10;
+           if ($request->input('sort')!=="") {
+             $sort = $request->input('sort');
+           }
+           if ($request->input('paginate')!=="") {
+             $paginate = $request->input('paginate');
+           }
+            $coll =  Entry::where('current_version',1)->orderBy('created_at', $sort)->paginate($paginate);
+         } else {
+           $coll =  "empty bottle";
+         };
 
-        return $this->prepareResult(true,$coll,[],"All user entries");
+         return $this->prepareResult(true,$coll,[],"All user entries");
 
-    }
+     }
 
     /**
 
@@ -282,9 +282,14 @@ public function accessToken(Request $request)
 
         $match_sql = "match(title,description,text_body) against ('$sanitize_sentence' in boolean mode)";
 
+        $paginate = 10;
+        if ($request->input('paginate')!==null && $request->input('paginate')!=="") {
+          $paginate = $request->input('paginate');
+        }
+
         $results = Pages::select('entry_id','title','description',DB::raw($match_sql."as score"))
             ->whereRaw($match_sql)
-            ->orderBy('score', 'desc')->limit(25)->get();
+            ->orderBy('score', 'desc')->paginate($paginate);
 
         return $this->prepareResult(true,$results, $sanitize_sentence,"Results created");
 

@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class EntryTopic extends Pivot
 {
-    protected $table = 'entrytopic';
+    protected $table = 'entry_topic';
 }

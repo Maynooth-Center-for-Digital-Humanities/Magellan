@@ -31,6 +31,8 @@ Route::group(['middleware' => ['api','auth:api']], function()
 
     Route::get('/search/{expr}','ApiIngestionController@search');
 
+    Route::get('/topics/{expr?}','ApiIngestionController@viewtopics');
+
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });

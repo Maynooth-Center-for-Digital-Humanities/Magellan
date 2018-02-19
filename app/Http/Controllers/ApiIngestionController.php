@@ -8,6 +8,8 @@ use Hash;
 use Illuminate\Validation\Rule;
 use App\Entry;
 use App\User;
+use App\Topic;
+use App\EntryTopic;
 use DB;
 use App\Pages as Pages;
 use App\EntryFormats as EntryFormats;
@@ -301,9 +303,17 @@ public function accessToken(Request $request)
 
     }
 
-    public function viewtopics(Request $request, $expr){
+    public function viewtopics(Request $request, $expr = ""){
 
-        return true;
+        if(empty($expr)) {
+            $results = Topic::select('name', 'count')->where('count', '>', '0')->get();
+        }else{
+            $topic = Topic::select('id')->where('name','=',$expr)->firstOrFail();
+            $results = EntryTopic::select('entry_id')->where('topic_id','=',$topic->id)->get();
+
+        }
+
+        return  $this->prepareResult(true,$results, "No Errors","Results created");
     }
 
 

@@ -288,12 +288,19 @@ public function accessToken(Request $request)
 
         return $this->prepareResult(true,$results, $sanitize_sentence,"Results created");
 
-
     }
 
     public function search(Request $request, $expr){
 
+        return true;
+
     }
+
+    public function viewtopics(Request $request, $expr){
+
+        return true;
+    }
+
 
 
 

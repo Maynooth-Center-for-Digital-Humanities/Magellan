@@ -7,7 +7,7 @@ use App\Entry;
 class EntryTableSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * Run the database seeds .
      *
      * @return void
      */

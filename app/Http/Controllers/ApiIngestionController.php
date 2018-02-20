@@ -306,8 +306,11 @@ public function accessToken(Request $request)
     public function viewtopics(Request $request, $expr = ""){
 
         if(empty($expr)) {
+
             $results = Topic::select('name', 'count')->where('count', '>', '0')->get();
+
         }else{
+
             $topic = Topic::select('id')->where('name','=',$expr)->firstOrFail();
             $results = EntryTopic::select('entry_id')->where('topic_id','=',$topic->id)->get();
 
@@ -315,8 +318,5 @@ public function accessToken(Request $request)
 
         return  $this->prepareResult(true,$results, "No Errors","Results created");
     }
-
-
-
 
 }

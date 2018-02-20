@@ -20,6 +20,7 @@ class EntryFormat implements EntryFormatInterface
     protected $spec = [
         'api_version' => 'required|string|max:255',
         'collection' => 'required|string|max:255',
+        'collection_ID' => 'required|integer|max:255',
         'copyright_statement' => 'required|string|max:1500',
         'creator' => 'nullable|string|max:255',
         'creator_gender' => array('Female','Male'),
@@ -34,15 +35,15 @@ class EntryFormat implements EntryFormatInterface
         'title' => 'required|string|max:500',
         'pages.*.archive_filename'=>'required|max:255',
         'pages.*.contributor'=>'string|max:255',
-        'pages.*.doc_collection_identifier'=>'required|max:500',
         'pages.*.last_rev_timestamp'=>'date|required|date_format:Y-m-d\TH:i:sP',
         'pages.*.original_filename'=>'required|max:255',
         'pages.*.page_count'=>'required|integer',
         'pages.*.page_id'=>'required|integer',
+        'pages.*.page_type'=>'string|max:50',
         'pages.*.rev_ID'=>'required|integer',
         'pages.*.rev_name'=>'required|max:255',
-        'pages.*.transcription'=>'required|max:1500',
-        'recipient'=>'required|max:255',
+        'pages.*.transcription'=>'max:1500',
+        'recipient'=>'nullable|max:255',
         'recipient_location'=>'max:255',
         'request_time'=>'date|required|date_format:Y-m-d\TH:i:sP',
         'source'=>'required|max:255',
@@ -53,7 +54,7 @@ class EntryFormat implements EntryFormatInterface
         'topics.*.topic_name'=>'required|max:255',
         'type'=>'required|max:255',
         'user_id'=>'required|max:15',
-        'year_of_death_of_author'=>'required|max:4'
+        'year_of_death_of_author'=>'max:4'
     ];
 
     public function getValidatorSpec(){

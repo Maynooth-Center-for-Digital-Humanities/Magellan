@@ -32,13 +32,14 @@ class FileEntryController extends Controller
         if($request->hasFile('data') && $request->filled('format')){
 
             $format=$request->get('format');
-
             $entry_format = EntryFormatFactory::create($format);
             $file = $request->file('data');
             $extension=$file->getClientOriginalExtension();
             Storage::disk('local')->put($file->getFilename().'.'.$extension,  File::get($file));
 
             if($entry_format->valid($file)){
+
+
 
                 // Store the file
                 $saved_file = $this->store($file,$format,Auth::user()->id);

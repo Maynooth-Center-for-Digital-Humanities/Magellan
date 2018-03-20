@@ -14,11 +14,14 @@ class XML_utilities
 
     // function to validate and transform the XML file
     function parseXMLFile($xml_file, $xsl_file, $rng_schema) {
-        $xml = new DOMDocument();
+
+        $xml = new \DOMDocument();
+
         $xml->load($xml_file);
-        if (isset($rng_schema) && $rng_schema!=="") {
+
+        if (file_exists(app_path($rng_schema))){
             // validate the xml file against the rng schema
-            $valid = $xml->relaxNGValidate($rng_schema);
+            $valid = $xml->relaxNGValidate(app_path($rng_schema));
             if (!$valid) {
                 echo $xml_file."\n";
             }
@@ -27,10 +30,10 @@ class XML_utilities
 
         if ($valid) {
 
-            $xsl = new DOMDocument();
-            $xsl->load($xsl_file);
+            $xsl = new \DOMDocument();
+            $xsl->load(app_path($xsl_file));
 
-            $proc = new XSLTProcessor();
+            $proc = new \XSLTProcessor();
             $proc->importStyleSheet($xsl);
 
             // return the xsl output

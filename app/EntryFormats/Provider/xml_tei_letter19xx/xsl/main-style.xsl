@@ -107,7 +107,7 @@
             <xsl:text>"page_count": "</xsl:text><xsl:value-of select="position()" /><xsl:text>",</xsl:text>
             <xsl:text>"page_id": "",</xsl:text>
             <xsl:text>"page_type": "</xsl:text><xsl:value-of select="/TEI:TEI/TEI:text/TEI:group/TEI:text[$pageindex]/@type" /><xsl:text>",</xsl:text>
-            <xsl:text>"rev_ID": "",</xsl:text>
+            <xsl:text>"rev_id": "",</xsl:text>
             <xsl:text>"rev_name": "",</xsl:text>
             <!-- transcription -->
             <xsl:text>"transcription": "</xsl:text>
@@ -140,7 +140,7 @@
         </xsl:if>
         <xsl:for-each select="TEI:TEI/TEI:teiHeader/TEI:profileDesc/TEI:textClass/TEI:keywords/TEI:list/TEI:item[@n='tag']">
             <xsl:text>{</xsl:text>
-                <xsl:text>"topic_ID":"",</xsl:text>
+                <xsl:text>"topic_id":"",</xsl:text>
                 <xsl:text>"topic_name": "</xsl:text><xsl:value-of select="text()"/><xsl:text>"</xsl:text>
             <xsl:text>}</xsl:text>           
             <xsl:if test="position()!=last()">

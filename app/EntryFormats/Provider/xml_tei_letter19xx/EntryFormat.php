@@ -13,7 +13,9 @@ use App\EntryFormats\EntryFormatInterface as EntryFormatInterface;
 
 use App\EntryFormats\Helpers\SaveOnDatabaseTrait as SaveOnDatabaseTrait;
 
-use App\EntryFormats\Provider\xml_tei_letter19xx\XML_utilities;
+use App\EntryFormats\Provider\xml_tei_letter19xx\XML_utilities as XML;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
 
 class EntryFormat implements EntryFormatInterface
 {
@@ -21,9 +23,9 @@ class EntryFormat implements EntryFormatInterface
 
     protected $xml_dir = "xml";
     // path to the xsl file that produces the JSON
-    protected $xsl_file = "xsl/main-style.xsl";
+    protected $xsl_file = "EntryFormats/Provider/xml_tei_letter19xx/xsl/main-style.xsl";
     // path to the rng schema to validate the XML file against
-    protected $rng_schema = "schema/template.rng";
+    protected $rng_schema = "template.rng";
     // set errors to custom file
     protected $error_log = "errors/error-log.log";
 
@@ -60,13 +62,14 @@ class EntryFormat implements EntryFormatInterface
 
     public function valid($entry){
 
-        $file = $entry->getPath()."/".$entry->filename;
+        $file = "app/".$entry->getFilename().'.'.$entry->getClientOriginalExtension();
 
         $XML = new XML_utilities();
 
+
         if($entry->getClientMimeType()=="application/xml"){
 
-            $xml_json = $XML->parseXMLFile($file, $this->xsl_file, $this->rng_schema);
+            $xml_json = $XML->parseXMLFile(storage_path($file), $this->xsl_file, $this->rng_schema);
 
             if ($xml_json!==false) {
                 $normalized_json = $XML->normalizeXMLAttributes($xml_json);

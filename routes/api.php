@@ -15,23 +15,33 @@ use Illuminate\Http\Request;
 
 Route::get('/login','ApiIngestionController@accessToken');
 
-Route::group(['middleware' => ['api','auth:api']], function()
-{
-    Route::post('/add/','ApiIngestionController@store');
+Route::group(['middleware' => ['api','auth:api']], function(){
 
-    Route::get('/logout/','ApiIngestionController@resetAccessToken');
+        Route::post('/add/','ApiIngestionController@store');
 
-});
+        Route::get('/logout/','ApiIngestionController@resetAccessToken');
 
-    Route::get('/index/','ApiIngestionController@index');
+        Route::post('/fileupload',[
+                'as' => 'addentry', 'uses' => 'FileEntryController@add']);
 
-    Route::get('/show/{id}','ApiIngestionController@show');
+    });
 
-    Route::get('/fullsearch/{sentence}','ApiIngestionController@fullsearch');
 
-    Route::get('/search/{expr}','ApiIngestionController@search');
 
-    Route::get('/topics/{expr?}','ApiIngestionController@viewtopics');
+Route::get('file', 'FileEntryController@index');
+
+Route::get('file/get/{filename}', [
+        'as' => 'getentry', 'uses' => 'FileEntryController@get']);
+
+Route::get('/index/','ApiIngestionController@index');
+
+Route::get('/show/{id}','ApiIngestionController@show');
+
+Route::get('/fullsearch/{sentence}','ApiIngestionController@fullsearch');
+
+Route::get('/search/{expr}','ApiIngestionController@search');
+
+Route::get('/topics/{expr?}','ApiIngestionController@viewtopics');
 
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();

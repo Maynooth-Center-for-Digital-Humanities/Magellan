@@ -10,6 +10,7 @@ namespace App\EntryFormats\Provider\omeka;
 
 use Illuminate\Validation\Rule as Rule;
 use App\EntryFormats\EntryFormatInterface as EntryFormatInterface;
+use Illuminate\Validation\Validator;
 
 use App\EntryFormats\Helpers\SaveOnDatabaseTrait as SaveOnDatabaseTrait;
 
@@ -20,7 +21,7 @@ class EntryFormat implements EntryFormatInterface
     protected $spec = [
         'api_version' => 'required|string|max:255',
         'collection' => 'required|string|max:255',
-        'collection_ID' => 'required|integer|max:255',
+        'collection_id' => 'required|integer|max:255',
         'copyright_statement' => 'required|string|max:1500',
         'creator' => 'nullable|string|max:255',
         'creator_gender' => array('Female','Male'),
@@ -29,7 +30,7 @@ class EntryFormat implements EntryFormatInterface
         'description' => 'nullable|string|max:2500',
         'doc_collection' => 'string|max:255',
         'language' => 'required|alpha|max:255',
-        'letter_ID' => 'required|integer',
+        'document_id' => 'required|integer',
         'modified_timestamp' => 'date|required|date_format:Y-m-d\TH:i:sP',
         'number_pages'=>'required|integer',
         'title' => 'required|string|max:500',
@@ -40,7 +41,7 @@ class EntryFormat implements EntryFormatInterface
         'pages.*.page_count'=>'required|integer',
         'pages.*.page_id'=>'required|integer',
         'pages.*.page_type'=>'nullable|string|max:50',
-        'pages.*.rev_ID'=>'required|integer',
+        'pages.*.rev_id'=>'required|integer',
         'pages.*.rev_name'=>'required|max:255',
         'pages.*.transcription'=>'max:1500',
         'recipient'=>'nullable|max:255',
@@ -49,37 +50,39 @@ class EntryFormat implements EntryFormatInterface
         'source'=>'required|max:255',
         'terms_of_use'=>'required|max:1',
         'time_zone'=>'required|max:255',
-        'title'=>'required|max:255',
-        'topics.*.topic_ID'=>'required|integer',
+        'topics.*.topic_id'=>'required|integer',
         'topics.*.topic_name'=>'required|max:255',
         'type'=>'required|max:255',
         'user_id'=>'required|max:15',
         'year_of_death_of_author'=>'max:4'
     ];
 
-    public function getValidatorSpec(){
+    private function getValidatorSpec(){
 
         return array_map(
             function($elem) {return (!is_array($elem) ?$elem:Rule::in($elem));},
             $this->spec
         );
     }
-    public function getTextFields($parent){
+    public function getJsonData($parent){
         return null;
     }
-    public function validateText($text,$parent)
-    {
+    public function validateText($text,$parent){
         return null;
     }
     public function getConstrainedArrayFields($parent){
+
         return null;
     }
     public function validateArray($array,$parent){
+
         return null;
     }
 
-    public function valid($json){
-        return null;
+    public function valid($entry){
+
+         return \Validator::make($entry, $this->getValidatorSpec());
+
     }
 
 }

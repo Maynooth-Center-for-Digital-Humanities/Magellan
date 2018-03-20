@@ -22,8 +22,6 @@ trait SaveOnDatabaseTrait
 
         $this->savePages($single_element->pages,$entry,$single_element->title,$single_element->description);
 
-
-
         return true;
 
     }
@@ -54,22 +52,22 @@ trait SaveOnDatabaseTrait
 
         foreach($all_topics as $topic){
 
-            $find_topic_name = Topic::where('topic_id',$topic->topic_ID)->first();
-            $find_topic_ID = Topic::where('name',$topic->topic_name)->first();
+            $find_topic_name = Topic::where('topic_id',$topic->topic_id)->first();
+            $find_topic_id = Topic::where('name',$topic->topic_name)->first();
 
-            $equally_null = (($find_topic_name == $find_topic_ID) and is_null($find_topic_ID) ? true : false );
+            $equally_null = (($find_topic_name == $find_topic_id) and is_null($find_topic_id) ? true : false );
 
             if($equally_null){
                 $tp = new Topic();
                 $tp->name = $topic->topic_name;
-                $tp->topic_id = $topic->topic_ID;
+                $tp->topic_id = $topic->topic_id;
                 $tp->description = "";
                 $tp->count = 1;
                 $tp->save();
 
-            }elseif (isset($find_topic_name->id) && isset($find_topic_ID->id) && ($find_topic_name->id==$find_topic_ID->id)){
+            }elseif (isset($find_topic_name->id) && isset($find_topic_id->id) && ($find_topic_name->id==$find_topic_id->id)){
 
-                $tp = $find_topic_ID;
+                $tp = $find_topic_id;
 
             }else{
 

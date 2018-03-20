@@ -37,9 +37,7 @@ class EntryApiInsertViewDeleteTest extends TestCase
         $headers = ['Authorization' => "Bearer $token->accessToken"];
         $entry = factory(Entry::class)->create();
 
-        $response = $this->json('POST', '/api/add',json_decode($entry->element,true),$headers)
-                    ->assertStatus(200);
-
+        $response = $this->json('POST', '/api/add', json_decode($entry->element,true),$headers)->assertStatus(200);
     }
 
 

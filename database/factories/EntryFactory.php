@@ -19,7 +19,7 @@ $factory->define(App\Entry::class, function (Faker $faker) {
                         'original_filename'=>$faker->macAddress.".jpg",
                         'page_count'=> $faker->numberBetween($min = 1, $max = 20),
                         'page_id'=> $faker->numberBetween($min = 1000, $max = 9000),
-                        'rev_ID'=> $faker->numberBetween($min = 1000, $max = 9000),
+                        'rev_id'=> $faker->numberBetween($min = 1000, $max = 9000),
                         'rev_name'=> $faker->name,
                             'transcription'=> $faker->randomHtml(2,2)
                 ));
@@ -35,7 +35,7 @@ $factory->define(App\Entry::class, function (Faker $faker) {
         $rnd_number=$faker->numberBetween($min = 0, $max = count($topics_list)-1);
 
         array_push($topics, array(
-            'topic_ID'=> $topics_list[$rnd_number]->topic_id,
+            'topic_id'=> $topics_list[$rnd_number]->topic_id,
             'topic_name'=>$topics_list[$rnd_number]->name
         ));
 
@@ -43,7 +43,7 @@ $factory->define(App\Entry::class, function (Faker $faker) {
 
     // Handle the current version option
 
-    $letter_id = $faker->numberBetween($min = 100, $max = 105);
+    $document_id = $faker->numberBetween($min = 100, $max = 105);
     $current_version = FALSE;
     return ['user_id' => User::inRandomOrder()->first(),
         'current_version' => $current_version,
@@ -59,7 +59,7 @@ $factory->define(App\Entry::class, function (Faker $faker) {
                 'description' => $faker->text($maxNbChars = 1000),
                 'doc_collection' => $faker->slug,
                 'language' => $faker->languageCode,
-                'letter_ID' => $letter_id,
+                'document_id' => $document_id,
                 'modified_timestamp' => $faker->datetime($max = 'now')->format(DateTime::ATOM),
                 'number_pages'=>$faker->numberBetween($min = 1, $max = 100),
                 'pages'=>$pages,

@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
         $this->call(EntryTableSeeder::class);
 
         // Handle the current version, only the latest has current_version = 1
-        App\Entry::whereRaw('entry.id IN (SELECT * FROM (SELECT MAX(ID) FROM entry GROUP BY JSON_EXTRACT(entry.element, "$.letter_ID")) AS X);')->update(['current_version' => 1]);
+        App\Entry::whereRaw('entry.id IN (SELECT * FROM (SELECT MAX(ID) FROM entry GROUP BY JSON_EXTRACT(entry.element, "$.document_id")) AS X);')->update(['current_version' => 1]);
 
         $datetime2 = new DateTime();
         $this->command->info('Seeding finished after '.$datetime1->diff($datetime2)->format('%i minutes and %s seconds').' at '.$datetime2->format('H:i:s'));

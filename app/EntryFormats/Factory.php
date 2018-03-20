@@ -12,10 +12,10 @@ class Factory
 {
     public static $path_to_provider = "App\EntryFormats\Provider";
 
-    public static function create($json,$locale='')
+    public static function create($format,$locale='')
     {
 
-        $provider_name=json_decode($json->element)->type;
+        $provider_name=$format;
 
         $provider = self::findProviderClassname($provider_name,$locale);
 

@@ -10,11 +10,10 @@ namespace  App\EntryFormats;
 
 interface EntryFormatInterface {
 
-    public function getValidatorSpec();
-    public function getTextFields($parent);
+    public function getJsonData($parent);
     public function validateText($text,$parent);
     public function getConstrainedArrayFields($parent);
     public function validateArray($array,$parent);
     public function saveCollateralEntities($entry);
-    public function valid($json);
+    public function valid($entry);
 }

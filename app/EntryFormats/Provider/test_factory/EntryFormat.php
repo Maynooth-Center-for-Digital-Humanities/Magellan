@@ -10,6 +10,7 @@ namespace App\EntryFormats\Provider\test_factory;
 
 use Illuminate\Validation\Rule as Rule;
 use App\EntryFormats\EntryFormatInterface as EntryFormatInterface;
+use Illuminate\Validation\Validator;
 
 use App\EntryFormats\Helpers\SaveOnDatabaseTrait as SaveOnDatabaseTrait;
 
@@ -29,7 +30,7 @@ class EntryFormat implements EntryFormatInterface
         'doc_collection' => 'string|max:255',
         'title' => 'required|string|max:500',
         'language' => 'required|alpha|max:255',
-        'letter_ID' => 'required|integer',
+        'document_id' => 'required|integer',
         'modified_timestamp' => 'date|required|date_format:Y-m-d\TH:i:sP',
         'number_pages'=>'required|integer',
         'pages.*.archive_filename'=>'required|max:255',
@@ -48,25 +49,24 @@ class EntryFormat implements EntryFormatInterface
         'source'=>'required|max:255',
         'terms_of_use'=>'required|max:1',
         'time_zone'=>'required|max:255',
-        'topics.*.topic_ID'=>'required|integer',
+        'topics.*.topic_id'=>'required|integer',
         'topics.*.topic_name'=>'required|max:255',
         'type'=>'required|max:255',
         'user_id'=>'required|max:15',
         'year_of_death_of_author'=>'required|max:4'
     ];
 
-    public function getValidatorSpec(){
+    private function getValidatorSpec(){
 
         return array_map(
             function($elem) {return (!is_array($elem) ?$elem:Rule::in($elem));},
             $this->spec
         );
     }
-    public function getTextFields($parent){
+    public function getJsonData($parent){
         return null;
     }
-    public function validateText($text,$parent)
-    {
+    public function validateText($text,$parent){
         return null;
     }
     public function getConstrainedArrayFields($parent){
@@ -76,8 +76,8 @@ class EntryFormat implements EntryFormatInterface
         return null;
     }
 
-    public function valid($json){
-        return null;
+    public function valid($entry){
+        return \Validator::make($entry, $this->getValidatorSpec());
     }
 
 }

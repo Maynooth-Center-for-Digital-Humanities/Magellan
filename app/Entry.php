@@ -13,6 +13,7 @@ class Entry extends Model
         static::created(function($entry) {
             $entry->afterSave($entry);
         });
+
     }
 
     public function user()
@@ -32,9 +33,12 @@ class Entry extends Model
 
     public function afterSave($entry)
     {
-        $entry_format =  EntryFormats\Factory::create($entry);
+        $format = json_decode($entry->element)->type;
+        $entry_format =  EntryFormats\Factory::create($format);
         $error = $entry_format->saveCollateralEntities($entry);
         return $error;
     }
+
+
 
 }

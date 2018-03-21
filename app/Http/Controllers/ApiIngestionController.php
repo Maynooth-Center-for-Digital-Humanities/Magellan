@@ -137,19 +137,26 @@ class ApiIngestionController extends Controller
 
     public function viewtopics(Request $request, $expr = "")
     {
+      if(empty($expr)) {
+          $results = array();
+          $rootTopics = Topic::select('id', 'name', 'count')->where([
+            ['parent_id', '=', '0'],
+            ['count', '>', '0'],
+            ])->get();
 
-        if (empty($expr)) {
+          foreach ($rootTopics as $rootTopic) {
+            $rootTopic['children'] = Topic::getTopicsChildren($rootTopic['id']);
+            $results[]=$rootTopic;
+          }
 
-            $results = Topic::select('name', 'count')->where('count', '>', '0')->get();
+      } else {
 
-        } else {
+          $topic = Topic::select('id')->where('name','=',$expr)->firstOrFail();
+          $results = EntryTopic::select('entry_id')->where('topic_id','=',$topic->id)->get();
 
-            $topic = Topic::select('id')->where('name', '=', $expr)->firstOrFail();
-            $results = EntryTopic::select('entry_id')->where('topic_id', '=', $topic->id)->get();
+      }
 
-        }
-
-        return $this->prepareResult(true, $results, "No Errors", "Results created");
+      return  $this->prepareResult(true,$results, "No Errors","Results created");
     }
 
     public function accessToken(Request $request)

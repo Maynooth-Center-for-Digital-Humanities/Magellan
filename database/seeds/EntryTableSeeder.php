@@ -14,7 +14,7 @@ class EntryTableSeeder extends Seeder
     public function run()
     {
 
-        $entry = factory(Entry::class, 100)->create();
+        $entry = factory(Entry::class, 0)->create();
         $this->command->info('Entry table seeded!');
     }
 }

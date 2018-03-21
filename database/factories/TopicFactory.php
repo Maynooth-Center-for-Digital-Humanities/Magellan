@@ -25,7 +25,8 @@ $factory->define(App\Topic::class, function (Faker $faker) {
     return [
         'name' => $faker->colorName,
         'topic_id'=>$faker->numberBetween($min = 1, $max = 200),
+        'parent_id'=>$faker->numberBetween($min = 0, $max = 100),
         'description' => $faker->name,
-        'count' => 0
+        'count' => $faker->numberBetween($min = 1, $max = 10),
     ];
 });

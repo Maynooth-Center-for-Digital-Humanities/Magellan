@@ -9,21 +9,29 @@
 namespace App\EntryFormats\Provider\xml_tei_letter19xx;
 
 
+
+
 class XML_utilities
 {
+    use \Illuminate\Console\DetectsApplicationNamespace;
 
     // function to validate and transform the XML file
-    function parseXMLFile($xml_file, $xsl_file, $rng_schema) {
+    function parseXMLFile($xml_file, $xsl, $rng_schema) {
 
         $xml = new \DOMDocument();
-
         $xml->load($xml_file);
 
-        if (file_exists(app_path($rng_schema))){
+        $class = new \ReflectionClass($this);
+        $namespace = str_replace("\\","/",$class->getNamespaceName());
+
+        $rng_file  = base_path()."/".$namespace."/schema/".$rng_schema;
+        $xsl_file = base_path()."/".$namespace."/xsl/".$xsl;
+
+        if (file_exists($rng_file)){
             // validate the xml file against the rng schema
-            $valid = $xml->relaxNGValidate(app_path($rng_schema));
+            $valid = $xml->relaxNGValidate($rng_file);
             if (!$valid) {
-                echo $xml_file."\n";
+                return false;
             }
         }
         else $valid = TRUE;
@@ -31,7 +39,7 @@ class XML_utilities
         if ($valid) {
 
             $xsl = new \DOMDocument();
-            $xsl->load(app_path($xsl_file));
+            $xsl->load($xsl_file);
 
             $proc = new \XSLTProcessor();
             $proc->importStyleSheet($xsl);

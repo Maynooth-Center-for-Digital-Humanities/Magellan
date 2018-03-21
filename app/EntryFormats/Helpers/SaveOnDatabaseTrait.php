@@ -57,15 +57,17 @@ trait SaveOnDatabaseTrait
 
             $equally_null = (($find_topic_name == $find_topic_id) and is_null($find_topic_id) ? true : false );
 
+
             if($equally_null){
+
                 $tp = new Topic();
                 $tp->name = $topic->topic_name;
-                $tp->topic_id = $topic->topic_id;
+                $tp->topic_id = empty($topic->topic_id)? null:$topic->topic_id;
                 $tp->description = "";
                 $tp->count = 1;
                 $tp->save();
 
-            }elseif (isset($find_topic_name->id) && isset($find_topic_id->id) && ($find_topic_name->id==$find_topic_id->id)){
+            }elseif (isset($find_topic_id->id)){
 
                 $tp = $find_topic_id;
 

@@ -64,7 +64,7 @@ class EntryFormat implements EntryFormatInterface
             $this->spec
         );
     }
-    public function getJsonData($parent){
+    public function getJsonData(){
         return null;
     }
     public function validateText($text,$parent){

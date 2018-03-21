@@ -152,7 +152,7 @@
         </xsl:if>
         <!-- topics -->
         
-        <xsl:text>"type": "XML",</xsl:text>
+        <xsl:text>"type": "xml_tei_letter19xx",</xsl:text>
         <xsl:text>"user_id": "",</xsl:text>
         <xsl:text>"year_of_death_of_author": ""</xsl:text>
         <xsl:text> }</xsl:text>

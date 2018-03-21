@@ -32,20 +32,19 @@ class FileEntryController extends Controller
         if($request->hasFile('data') && $request->filled('format')){
 
             $format=$request->get('format');
+
             $entry_format = EntryFormatFactory::create($format);
+
             $file = $request->file('data');
             $extension=$file->getClientOriginalExtension();
             Storage::disk('local')->put($file->getFilename().'.'.$extension,  File::get($file));
 
             if($entry_format->valid($file)){
 
-
-
                 // Store the file
                 $saved_file = $this->store($file,$format,Auth::user()->id);
-
                 $entry = new Entry();
-                $entry->element = $entry_format->getJsonData($file);
+                $entry->element = $entry_format->getJsonData();
                 $entry->user_id = Auth::user()->id;
                 $entry->current_version = Entry::where('current_version', TRUE)->where('element->document_id', $request->document_id)->count() > 0 ? FALSE : TRUE;
                 $entry->uploadedfile_id = $saved_file->id;

@@ -10,7 +10,7 @@ namespace  App\EntryFormats;
 
 interface EntryFormatInterface {
 
-    public function getJsonData($parent);
+    public function getJsonData();
     public function validateText($text,$parent);
     public function getConstrainedArrayFields($parent);
     public function validateArray($array,$parent);

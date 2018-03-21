@@ -99,7 +99,8 @@ class ApiIngestionController extends Controller
             $entry = new Entry();
             $entry->element = $request->getContent();
             $entry->user_id = Auth::user()->id;
-            $entry->current_version = Entry::where('current_version', TRUE)->where('element->document_id', $request->document_id)->count() > 0 ? FALSE : TRUE;
+            Entry::where('current_version', TRUE)->where('element->document_id', $request->document_id)->update(array('current_version'=>FALSE));
+            $entry->current_version = TRUE;
             $entry->save();
 
             return $this->prepareResult(true, $entry, $error['errors'], "Entry created");

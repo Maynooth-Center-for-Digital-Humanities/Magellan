@@ -43,7 +43,8 @@ Route::get('/search/{expr}','ApiIngestionController@search');
 
 Route::get('/topics/{expr?}','ApiIngestionController@viewtopics');
 
+Route::get('/topicsbyid/{ids}','ApiIngestionController@viewtopicsbyid');
+
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
-

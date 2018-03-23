@@ -160,6 +160,28 @@ class ApiIngestionController extends Controller
       return  $this->prepareResult(true,$results, "No Errors","Results created");
     }
 
+    public function viewtopicsbyid(Request $request, $ids)
+    {
+      $ids_arr = explode(",", $ids);
+      $entry_ids = EntryTopic::select('entry_id')->whereIn('topic_id',$ids_arr)->get();
+
+      if (count($entry_ids)>0) {
+          $sort = "asc";
+          $paginate = 10;
+          if ($request->input('sort') !== "") {
+              $sort = $request->input('sort');
+          }
+          if ($request->input('paginate') !== "") {
+              $paginate = $request->input('paginate');
+          }
+          $coll = Entry::whereIn('id',$entry_ids)->where('current_version', 1)->orderBy('created_at', $sort)->paginate($paginate);
+      } else {
+          $coll = "empty bottle";
+      };
+
+      return $this->prepareResult(true, $coll, [], "All user entries");
+    }
+
     public function accessToken(Request $request)
     {
 

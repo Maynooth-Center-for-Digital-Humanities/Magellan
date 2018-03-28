@@ -17,7 +17,7 @@ class CreateTopicTable extends Migration
             $table->increments('id');
             $table->timestamps();
             $table->integer('topic_id')->nullable();
-            $table->integer('parent_id')->nullable();
+            $table->integer('parent_id')->nullable()->default(0);
             $table->string('name',100);
             $table->string('description',200);
             $table->integer('count',false,true);

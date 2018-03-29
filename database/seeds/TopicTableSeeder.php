@@ -11,7 +11,7 @@ class TopicTableSeeder extends Seeder
      */
     public function run()
     {
-        $entry = factory(App\Topic::class, 100)->create();
+        $entry = factory(App\Topic::class, 1)->create();
         $this->command->info('Topic table seeded!');
     }
 }

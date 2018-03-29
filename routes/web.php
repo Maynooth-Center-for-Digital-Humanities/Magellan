@@ -12,9 +12,7 @@
 */
 
 
-Route::get('/', function () {
-    return view('welcome');
-});
+//Route::get('/ui/', 'public/ui/index.html');
 
 Route::post('/importer', function () {
     echo '<h1>Hello</h1>';

@@ -45,6 +45,15 @@ Route::get('/topics/{expr?}','ApiIngestionController@viewtopics');
 
 Route::get('/topicsbyid/{ids}','ApiIngestionController@viewtopicsbyid');
 
+Route::get('/indexfiltered/','ApiIngestionController@indexfiltered');
+
+// metadata elements
+Route::get('/sources/','ApiIngestionController@sources');
+Route::get('/authors/','ApiIngestionController@authors');
+Route::get('/genders/','ApiIngestionController@genders');
+Route::get('/languages/','ApiIngestionController@languages');
+Route::get('/date_created/','ApiIngestionController@date_created');
+
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });

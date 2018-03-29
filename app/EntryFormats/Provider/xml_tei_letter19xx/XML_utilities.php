@@ -6,7 +6,7 @@
  * Time: 16:45
  */
 
-namespace App\EntryFormats\Provider\xml_tei_letter19xx;
+namespace app\EntryFormats\Provider\xml_tei_letter19xx;
 
 
 

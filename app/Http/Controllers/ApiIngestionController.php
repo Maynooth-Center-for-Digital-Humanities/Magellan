@@ -464,7 +464,7 @@ class ApiIngestionController extends Controller
           $entry_ids[] = $date_created_entry_ids;
         }
       }
-      
+
       if (count($entry_ids)>0) {
           $coll = Entry::whereIn('id',$entry_ids[0])->where('current_version', 1)->orderBy('created_at', $sort)->paginate($paginate);
       } else {
@@ -476,6 +476,223 @@ class ApiIngestionController extends Controller
       };
 
       return $this->prepareResult(true, $coll, [], "All user entries");
+    }
+
+    public function indexfilteredFilters(Request $request)
+    {
+      $sort = "asc";
+      $keywords_ids = array();
+      $sources = array();
+      $authors = array();
+      $genders = array();
+      $languages = array();
+      $date_sent = array();
+
+      if ($request->input('sort')!=="") {
+        $sort = $request->input('sort');
+      }
+      if ($request->input('keywords')) {
+        $keywords_ids = $request->input('keywords');
+      }
+      if ($request->input('sources')) {
+        $sources = $request->input('sources');
+      }
+      if ($request->input('authors')) {
+        $authors = $request->input('authors');
+      }
+      if ($request->input('genders')) {
+        $genders = $request->input('genders');
+      }
+      if ($request->input('languages')) {
+        $languages = $request->input('languages');
+      }
+      if ($request->input('date_sent')) {
+        $date_sent = $request->input('date_sent');
+      }
+
+      $entry_ids = array();
+      // keywords
+      if (count($keywords_ids)>0) {
+        $keywords_entry_ids = EntryTopic::select('entry_id as id')->whereIn('topic_id',$keywords_ids)->get();
+        $keywords_entry_ids = $keywords_entry_ids->toArray();
+        $keywords_entry_ids = $this->returnIdsArray($keywords_entry_ids);
+        $entry_ids[] = $keywords_entry_ids;
+      }
+      // sources
+      if (count($sources)>0) {
+        $new_sources = $this->inputArraytoString($sources);
+        $sources_ids = Entry::select("id")->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source'))) IN (".$new_sources.")"))->get();
+        $sources_entry_ids = $sources_ids->toArray();
+        $sources_entry_ids = $this->returnIdsArray($sources_entry_ids);
+        if (!empty($entry_ids[0])) {
+          $new_ids = array();
+          foreach($entry_ids[0] as $entry_id) {
+            if (in_array($entry_id,$sources_entry_ids)) {
+              $new_ids[]=$entry_id;
+            }
+          }
+          $entry_ids[0] = $new_ids;
+        }
+        else {
+          $entry_ids[] = $sources_entry_ids;
+        }
+      }
+      // authors
+      if (count($authors)>0) {
+        $new_authors = $this->inputArraytoString($authors);
+        $authors_ids = Entry::select("id")->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))) IN (".$new_authors.")"))->get();
+        $authors_entry_ids = $authors_ids->toArray();
+        $authors_entry_ids = $this->returnIdsArray($authors_entry_ids);
+        if (!empty($entry_ids[0])) {
+          $new_ids = array();
+          foreach($entry_ids[0] as $entry_id) {
+            if (in_array($entry_id,$authors_entry_ids)) {
+              $new_ids[]=$entry_id;
+            }
+          }
+          $entry_ids[0] = $new_ids;
+        }
+        else {
+          $entry_ids[] = $authors_entry_ids;
+        }
+      }
+      // genders
+      if (count($genders)>0) {
+        $new_genders = $this->inputArraytoString($genders);
+        $genders_ids = Entry::select("id")->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender'))) IN (".$new_genders.")"))->get();
+        $genders_entry_ids = $genders_ids->toArray();
+        $genders_entry_ids = $this->returnIdsArray($genders_entry_ids);
+        if (!empty($entry_ids[0])) {
+          $new_ids = array();
+          foreach($entry_ids[0] as $entry_id) {
+            if (in_array($entry_id,$genders_entry_ids)) {
+              $new_ids[]=$entry_id;
+            }
+          }
+          $entry_ids[0] = $new_ids;
+        }
+        else {
+          $entry_ids[] = $genders_entry_ids;
+        }
+      }
+      // languages
+      if (count($languages)>0) {
+        $new_languages = $this->inputArraytoString($languages);
+        $languages_ids = Entry::select("id")->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.language'))) IN (".$new_languages.")"))->get();
+        $languages_entry_ids = $languages_ids->toArray();
+        $languages_entry_ids = $this->returnIdsArray($languages_entry_ids);
+        if (!empty($entry_ids[0])) {
+          $new_ids = array();
+          foreach($entry_ids[0] as $entry_id) {
+            if (in_array($entry_id,$languages_entry_ids)) {
+              $new_ids[]=$entry_id;
+            }
+          }
+          $entry_ids[0] = $new_ids;
+        }
+        else {
+          $entry_ids[] = $languages_entry_ids;
+        }
+      }
+      // date_created
+      if (count($date_sent)>0) {
+        $new_date_created = $this->inputArraytoString($date_sent);
+        $date_created_ids = Entry::select("id")->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created'))) IN (".$new_date_created.")"))->get();
+        $date_created_entry_ids = $date_created_ids->toArray();
+        $date_created_entry_ids = $this->returnIdsArray($date_created_entry_ids);
+        if (!empty($entry_ids[0])) {
+          $new_ids = array();
+          foreach($entry_ids[0] as $entry_id) {
+            if (in_array($entry_id,$date_created_entry_ids)) {
+              $new_ids[]=$entry_id;
+            }
+          }
+          $entry_ids[0] = $new_ids;
+        }
+        else {
+          $entry_ids[] = $date_created_entry_ids;
+        }
+      }
+
+      if (count($entry_ids)>0) {
+          $coll = Entry::whereIn('id',$entry_ids[0])->where('current_version', 1)->orderBy('created_at', $sort)->get();
+      } else {
+        if (Entry::first() != null) {
+          $coll = Entry::where('current_version', 1)->orderBy('created_at', $sort)->get();
+        } else {
+            $coll = "empty bottle";
+        };
+      };
+      //dd(($coll));
+
+      $keywords = array();
+      $sources = array();
+      $authors = array();
+      $genders = array();
+      $languages = array();
+      $dates_sent = array();
+
+      for ($i=0;$i<count($coll); $i++) {
+        $coll_decode = json_decode($coll[$i]["element"], true);
+        // keywords
+        if (isset($coll_decode["topics"])) {
+          $coll_keywords = $coll_decode["topics"];
+          for ($k=0;$k<count($coll_keywords);$k++) {
+            $coll_keyword = $coll_keywords[$k]['topic_name'];
+            if (!in_array($coll_keyword, $keywords)) {
+              $keywords[]=$coll_keyword;
+            }
+          }
+        }
+        //sources
+        if (isset($coll_decode["source"])) {
+          $coll_source = $coll_decode["source"];
+          if (!in_array($coll_source, $sources)) {
+            $sources[]=$coll_source;
+          }
+        }
+        //authors
+        if (isset($coll_decode["creator"])) {
+          $coll_author = $coll_decode["creator"];
+          if (!in_array($coll_author, $authors)) {
+            $authors[]=$coll_author;
+          }
+        }
+
+        //gender
+        if (isset($coll_decode["creator_gender"])) {
+          $coll_gender = $coll_decode["creator_gender"];
+          if (!in_array($coll_gender, $genders)) {
+            $genders[]=$coll_gender;
+          }
+        }
+        //language
+        if (isset($coll_decode["language"])) {
+          $coll_language = $coll_decode["language"];
+          if (!in_array($coll_language, $languages)) {
+            $languages[]=$coll_language;
+          }
+        }
+        //dates_sent
+        if (isset($coll_decode["date_created"])) {
+          $coll_date_sent = $coll_decode["date_created"];
+          if (!in_array($coll_date_sent, $dates_sent)) {
+            $dates_sent[]=$coll_date_sent;
+          }
+        }
+      }
+
+
+      $data = array(
+        "keywords"=> $keywords,
+        "sources"=> $sources,
+        "authors"=> $authors,
+        "genders"=> $genders,
+        "languages"=> $languages,
+        "dates_sent"=> $dates_sent,
+      );
+
+      return $this->prepareResult(true, $data, [], "All user entries");
     }
 
 }

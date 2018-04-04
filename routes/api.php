@@ -47,6 +47,8 @@ Route::get('/topicsbyid/{ids}','ApiIngestionController@viewtopicsbyid');
 
 Route::get('/indexfiltered/','ApiIngestionController@indexfiltered');
 
+Route::get('/indexfilteredfilters/','ApiIngestionController@indexfilteredFilters');
+
 // metadata elements
 Route::get('/sources/','ApiIngestionController@sources');
 Route::get('/authors/','ApiIngestionController@authors');

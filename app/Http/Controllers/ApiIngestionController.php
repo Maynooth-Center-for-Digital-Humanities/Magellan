@@ -11,6 +11,7 @@ use App\User;
 use App\Topic;
 use App\EntryTopic;
 use App\Helpers;
+use App\Uploadedfile;
 use DB;
 use App\Pages as Pages;
 use App\EntryFormats as EntryFormats;
@@ -68,6 +69,56 @@ class ApiIngestionController extends Controller
 
         if ($entry != null) {
             $coll = json_decode($entry->element, true);
+            $file_id = $entry->uploadedfile_id;
+            if ($file_id!==null) {
+              $file = Uploadedfile::select('id', 'filename', 'original_filename')
+                  ->where('id',$file_id)->get();
+              $link = asset('/').'download-xml/'.$file_id;
+              //$link = asset('/').'download-xml/'.$file[0]['filename'];
+              $newFile = $file[0];
+              $newFile['link'] = $link;
+              $coll["file"] = $newFile;
+            }
+
+        } else {
+            $coll = "";
+            $msg = "Entry not found";
+            $status = false;
+
+            abort(404, json_encode($this->prepareResult($status, $coll, [], $msg, "Request failed")));
+        };
+
+        return $this->prepareResult($status, $coll, [], $msg, "Request complete");
+
+    }
+
+    public function showLetter(Request $request, $id)
+    {
+
+
+        $entry = DB::table('entry')
+          ->join('uploadedfile', 'entry.uploadedfile_id','=','uploadedfile.id')
+          ->select('entry.*')
+          ->where('uploadedfile.original_filename',$id.".xml")
+          ->where('entry.current_version','1')
+          ->first();
+
+        $msg = "Entry found";
+        $status = true;
+
+
+        if ($entry != null) {
+            $coll = json_decode($entry->element, true);
+            $file_id = $entry->uploadedfile_id;
+            if ($file_id!==null) {
+              $file = Uploadedfile::select('id', 'filename', 'original_filename')
+                  ->where('id',$file_id)->get();
+              $link = asset('/').'download-xml/'.$file_id;
+              $newFile = $file[0];
+              $newFile['link'] = $link;
+              $coll["file"] = $newFile;
+            }
+
         } else {
             $coll = "";
             $msg = "Entry not found";
@@ -198,7 +249,7 @@ class ApiIngestionController extends Controller
         if ($user) {
 
             if (Hash::check($request->password, $user->password)) {
-                return $this->prepareResult(true, ["accessToken" => $user->createToken('ApiIngestion')->accessToken], [], "User Verified");
+                return $this->prepareResult(true, ["userName"=>$user->name, "accessToken" => $user->createToken('ApiIngestion')->accessToken], [], "User Verified");
             } else {
                 return $this->prepareResult(false, [], ["password" => "Wrong passowrd"], "Password not matched");
             }
@@ -521,7 +572,13 @@ class ApiIngestionController extends Controller
       // sources
       if (count($sources)>0) {
         $new_sources = $this->inputArraytoString($sources);
-        $sources_ids = Entry::select("id")->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source'))) IN (".$new_sources.")"))->get();
+        /*$sources_ids = Entry::selectRAW("id, COUNT(*) AS count")
+        ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source'))) IN (".$new_sources.")"))
+        ->groupBy("id")
+        ->get();*/
+        $sources_ids = Entry::select("id")
+        ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source'))) IN (".$new_sources.")"))
+        ->get();
         $sources_entry_ids = $sources_ids->toArray();
         $sources_entry_ids = $this->returnIdsArray($sources_entry_ids);
         if (!empty($entry_ids[0])) {

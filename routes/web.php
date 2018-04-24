@@ -12,7 +12,12 @@
 */
 
 
-//Route::get('/ui/', 'public/ui/index.html');
+/*Route::get('/ui/', 'public/ui/index.html');
+Route::get('/react/', function () {
+    return View::make("react.index");
+});*/
+
+Route::get('/download-xml/{filename}', 'FileEntryController@downloadXML');
 
 Route::post('/importer', function () {
     echo '<h1>Hello</h1>';

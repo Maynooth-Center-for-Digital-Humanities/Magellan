@@ -96,13 +96,11 @@ class EntryFormat implements EntryFormatInterface
     }
 
     public function valid($entry){
-
         $file = "app/".$entry->getFilename().'.'.$entry->getClientOriginalExtension();
 
         $XML = new XML_utilities();
 
-
-        if($entry->getClientMimeType()=="application/xml"){
+        if($entry->getClientMimeType()=="application/xml" || $entry->getClientMimeType()=="text/xml"){
 
             $xml_json = $XML->parseXMLFile(storage_path($file), $this->xsl_file, $this->rng_schema);
 
@@ -114,7 +112,6 @@ class EntryFormat implements EntryFormatInterface
             }
 
         };
-
         return false;
     }
 

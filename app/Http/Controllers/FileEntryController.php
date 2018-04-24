@@ -9,11 +9,14 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use Illuminate\Http\Response;
 use App\Entry;
+use DB;
+use App\Helpers;
 
 use App\EntryFormats\Factory as EntryFormatFactory;
 
 class FileEntryController extends Controller
 {
+  use Helpers\PrepareOutputTrait;
     /**
      * Display a listing of the resource.
      *
@@ -21,21 +24,21 @@ class FileEntryController extends Controller
      */
     public function index()
     {
+
         $entries = Uploadedfile::all();
 
         return $entries;
     }
 
     public function add(Request $request) {
+      $files = $request->file('data');
+      $format = $request->input('format');
 
-
-        if($request->hasFile('data') && $request->filled('format')){
-
-            $format=$request->get('format');
+      if ($request->hasFile('data') && $format!=="") {
+        foreach ($files as $file) {
 
             $entry_format = EntryFormatFactory::create($format);
 
-            $file = $request->file('data');
             $extension=$file->getClientOriginalExtension();
             Storage::disk('local')->put($file->getFilename().'.'.$extension,  File::get($file));
 
@@ -45,16 +48,44 @@ class FileEntryController extends Controller
                 $saved_file = $this->store($file,$format,Auth::user()->id);
                 $entry = new Entry();
                 $entry->element = $entry_format->getJsonData();
+
+                $decode = json_decode($entry_format->getJsonData(),true);
+                $document_id = $decode['document_id'];
+
                 $entry->user_id = Auth::user()->id;
-                $entry->current_version = Entry::where('current_version', TRUE)->where('element->document_id', $request->document_id)->count() > 0 ? FALSE : TRUE;
+                $entry->current_version = 1;
                 $entry->uploadedfile_id = $saved_file->id;
+
+                // if there are other entries with the same document id set their current_version to zero
+                $other_versions = DB::table('entry')
+                  ->join('uploadedfile', 'entry.uploadedfile_id','=','uploadedfile.id')
+                  ->select('entry.id')
+                  ->where('uploadedfile.original_filename',$document_id.".xml")
+                  ->where('entry.current_version','1')->get();
+
+                foreach($other_versions as $instance) {
+                  DB::table('entry')
+                  ->where('id', $instance->id)
+                  ->update(['current_version' => 0]);
+                }
+
+                // save entry
                 $entry->save();
 
             };
-
-            return new Response("File Uploaded Successfully", 200);
-
         }
+        if (count($files)===1) {
+          $response = array("document_id"=>$document_id);
+          return $this->prepareResult(200, $response, [], "File Uploaded Successfully");
+
+          //new Response::json([""]"Files Uploaded Successfully", 200);
+        }
+        else {
+          return new Response("Files Uploaded Successfully", 200);
+        }
+
+
+      }
 
     }
 
@@ -84,6 +115,17 @@ class FileEntryController extends Controller
 
     }
 
+    public function downloadXML($fileid) {
 
+      $fileUpload = Uploadedfile::where("id", $fileid)->get();
+      $filename = $fileUpload[0]->filename;
+      $original_filename = $fileUpload[0]->original_filename;
+      $file= storage_path(). "/app/".$filename;
+      $headers = array(
+              'Content-Type: application/xml',
+      );
+
+      return response()->download($file, $original_filename, $headers);
+    }
 
 }

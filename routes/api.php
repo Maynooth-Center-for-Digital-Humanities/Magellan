@@ -36,6 +36,7 @@ Route::get('file/get/{filename}', [
 Route::get('/index/','ApiIngestionController@index');
 
 Route::get('/show/{id}','ApiIngestionController@show');
+Route::get('/show-letter/{id}','ApiIngestionController@showLetter');
 
 Route::get('/fullsearch/{sentence}','ApiIngestionController@fullsearch');
 

@@ -24,6 +24,8 @@ Route::group(['middleware' => ['api','auth:api']], function(){
         Route::post('/fileupload',[
                 'as' => 'addentry', 'uses' => 'FileEntryController@add']);
 
+        Route::get('/indexall/','ApiIngestionController@indexAll');
+
     });
 
 
@@ -35,9 +37,8 @@ Route::get('file/get/{filename}', [
 
 Route::get('/index/','ApiIngestionController@index');
 
-Route::get('/indexall/','ApiIngestionController@indexAll');
-
 Route::get('/show/{id}','ApiIngestionController@show');
+
 Route::get('/show-letter/{id}','ApiIngestionController@showLetter');
 
 Route::get('/fullsearch/{sentence}','ApiIngestionController@fullsearch');

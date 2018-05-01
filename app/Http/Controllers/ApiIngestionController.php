@@ -52,6 +52,23 @@ class ApiIngestionController extends Controller
 
     }
 
+    public function indexAll(Request $request)
+    {
+
+        if (Entry::first() != null) {
+            $sort = "asc";
+            if ($request->input('sort') !== "") {
+                $sort = $request->input('sort');
+            }
+            $coll = Entry::where('current_version', 1)->orderBy('created_at', $sort)->get();
+        } else {
+            $coll = "empty bottle";
+        };
+
+        return $this->prepareResult(true, $coll, [], "All user entries");
+
+    }
+
     /**
      * Display the specified resource.
      *

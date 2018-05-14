@@ -111,8 +111,6 @@ class ApiIngestionController extends Controller
 
     public function showLetter(Request $request, $id)
     {
-
-
         $entry = DB::table('entry')
           ->join('uploadedfile', 'entry.uploadedfile_id','=','uploadedfile.id')
           ->select('entry.*')
@@ -189,11 +187,16 @@ class ApiIngestionController extends Controller
             $paginate = $request->input('paginate');
         }
 
-        $results = Pages::select('entry_id', 'title', 'description', DB::raw($match_sql . "as score"))
+        $pages = Pages::select('entry_id', 'title', 'description', 'text_body', DB::raw($match_sql . "as score"))
             ->whereRaw($match_sql)
             ->orderBy('score', 'desc')->paginate($paginate);
 
-        return $this->prepareResult(true, $results, $sanitize_sentence, "Results created");
+        $entries = array();
+        foreach($pages as $page) {
+          $entry = Entry::where('id', $page->entry_id)->first();
+          $entries[] = $entry;
+        }
+        return $this->prepareResult(true, $entries, $sanitize_sentence, "Results created");
 
     }
 

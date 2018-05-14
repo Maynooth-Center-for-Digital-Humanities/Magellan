@@ -187,16 +187,12 @@ class ApiIngestionController extends Controller
             $paginate = $request->input('paginate');
         }
 
-        $pages = Pages::select('entry_id', 'title', 'description', 'text_body', DB::raw($match_sql . "as score"))
-            ->whereRaw($match_sql)
-            ->orderBy('score', 'desc')->paginate($paginate);
-
-        $entries = array();
-        foreach($pages as $page) {
-          $entry = Entry::where('id', $page->entry_id)->first();
-          $entries[] = $entry;
-        }
-        return $this->prepareResult(true, $entries, $sanitize_sentence, "Results created");
+        $pages = Pages::select('entry_id', 'title', 'description', DB::raw($match_sql . "as score"))
+          ->with('entry')
+          ->whereRaw($match_sql)
+          ->orderBy('score', 'desc')->paginate($paginate);
+        $i=0;
+        return $this->prepareResult(true, $pages, $sanitize_sentence, "Results created");
 
     }
 

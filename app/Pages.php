@@ -8,6 +8,6 @@ class Pages extends Model
 {
     public function entry()
     {
-        return $this->belongsTo('App\Entry');
+      return $this->belongsTo('App\Entry');
     }
 }

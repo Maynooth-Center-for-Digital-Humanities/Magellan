@@ -580,18 +580,32 @@ class ApiIngestionController extends Controller
       $entry_ids = array();
       // keywords
       if (count($keywords_ids)>0) {
-        $keywords_entry_ids = EntryTopic::select('entry_id as id')->whereIn('topic_id',$keywords_ids)->get();
-        $keywords_entry_ids = $keywords_entry_ids->toArray();
+        $i=0;
+        $keywords_query = "";
+        if (count($keywords_ids)>1) {
+        }
+        foreach($keywords_ids as $keywords_id) {
+          if ($i===0) {
+            $keywords_query = 'SELECT '.$keywords_id.'entry_topic.entry_id as id FROM `entry_topic` as '.$keywords_id.'entry_topic';
+            $keywords_where = ' WHERE '.$keywords_id.'entry_topic.topic_id='.$keywords_id;
+          }
+          if ($i>0) {
+            $prev = $i-1;
+            $keywords_query .= ' INNER JOIN entry_topic as '.$keywords_id.'entry_topic '
+              .'ON '.$keywords_ids[$prev].'entry_topic.entry_id='.$keywords_id.'entry_topic.entry_id';
+            $keywords_where .= ' AND '.$keywords_id.'entry_topic.topic_id='.$keywords_id;
+          }
+          $i++;
+        }
+        $keywords_query = $keywords_query.$keywords_where;
+        $keywords_entry_ids = DB::select($keywords_query);
         $keywords_entry_ids = $this->returnIdsArray($keywords_entry_ids);
         $entry_ids[] = $keywords_entry_ids;
       }
-      // sources
+
+      /// sources
       if (count($sources)>0) {
         $new_sources = $this->inputArraytoString($sources);
-        /*$sources_ids = Entry::selectRAW("id, COUNT(*) AS count")
-        ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source'))) IN (".$new_sources.")"))
-        ->groupBy("id")
-        ->get();*/
         $sources_ids = Entry::select("id")
         ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source'))) IN (".$new_sources.")"))
         ->get();
@@ -610,6 +624,7 @@ class ApiIngestionController extends Controller
           $entry_ids[] = $sources_entry_ids;
         }
       }
+
       // authors
       if (count($authors)>0) {
         $new_authors = $this->inputArraytoString($authors);
@@ -696,7 +711,7 @@ class ApiIngestionController extends Controller
             $coll = "empty bottle";
         };
       };
-      //dd(($coll));
+
 
       $keywords = array();
       $sources = array();

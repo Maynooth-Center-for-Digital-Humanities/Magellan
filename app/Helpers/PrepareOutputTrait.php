@@ -26,7 +26,7 @@ trait PrepareOutputTrait
     }
 
     private function inputArraytoString($inputArray) {
-      if (count($inputArray)>0) {
+      if (is_array($inputArray) && count($inputArray)>0) {
         $new_string = "";
         $i=0;
         foreach($inputArray as $chunk) {
@@ -40,7 +40,7 @@ trait PrepareOutputTrait
         }
         return $new_string;
       }
-      else return false;
+      else return "'".$inputArray."'";
     }
 
     private function returnIdsArray($ids) {

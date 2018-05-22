@@ -582,8 +582,6 @@ class ApiIngestionController extends Controller
       if (count($keywords_ids)>0) {
         $i=0;
         $keywords_query = "";
-        if (count($keywords_ids)>1) {
-        }
         foreach($keywords_ids as $keywords_id) {
           if ($i===0) {
             $keywords_query = 'SELECT '.$keywords_id.'entry_topic.entry_id as id FROM `entry_topic` as '.$keywords_id.'entry_topic';
@@ -607,7 +605,7 @@ class ApiIngestionController extends Controller
       if (count($sources)>0) {
         $new_sources = $this->inputArraytoString($sources);
         $sources_ids = Entry::select("id")
-        ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source'))) IN (".$new_sources.")"))
+        ->whereRaw(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.source')) IN (".$new_sources.")"))
         ->get();
         $sources_entry_ids = $sources_ids->toArray();
         $sources_entry_ids = $this->returnIdsArray($sources_entry_ids);
@@ -628,7 +626,7 @@ class ApiIngestionController extends Controller
       // authors
       if (count($authors)>0) {
         $new_authors = $this->inputArraytoString($authors);
-        $authors_ids = Entry::select("id")->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))) IN (".$new_authors.")"))->get();
+        $authors_ids = Entry::select("id")->whereRaw(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator')) IN (".$new_authors.")"))->get();
         $authors_entry_ids = $authors_ids->toArray();
         $authors_entry_ids = $this->returnIdsArray($authors_entry_ids);
         if (!empty($entry_ids[0])) {
@@ -644,10 +642,11 @@ class ApiIngestionController extends Controller
           $entry_ids[] = $authors_entry_ids;
         }
       }
+
       // genders
       if (count($genders)>0) {
         $new_genders = $this->inputArraytoString($genders);
-        $genders_ids = Entry::select("id")->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender'))) IN (".$new_genders.")"))->get();
+        $genders_ids = Entry::select("id")->whereRaw(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender')) IN (".$new_genders.")"))->get();
         $genders_entry_ids = $genders_ids->toArray();
         $genders_entry_ids = $this->returnIdsArray($genders_entry_ids);
         if (!empty($entry_ids[0])) {
@@ -712,7 +711,7 @@ class ApiIngestionController extends Controller
         };
       };
 
-
+      //dd($entry_ids);
       $keywords = array();
       $sources = array();
       $authors = array();
@@ -720,64 +719,54 @@ class ApiIngestionController extends Controller
       $languages = array();
       $dates_sent = array();
 
+      //dd($coll);
       for ($i=0;$i<count($coll); $i++) {
         $coll_decode = json_decode($coll[$i]["element"], true);
+
         // keywords
         if (isset($coll_decode["topics"])) {
           $coll_keywords = $coll_decode["topics"];
           for ($k=0;$k<count($coll_keywords);$k++) {
             $coll_keyword = $coll_keywords[$k]['topic_name'];
-            if (!in_array($coll_keyword, $keywords)) {
-              $keywords[]=$coll_keyword;
-            }
+            $keywords[]=$coll_keyword;
           }
         }
+
         //sources
         if (isset($coll_decode["source"])) {
           $coll_source = $coll_decode["source"];
-          if (!in_array($coll_source, $sources)) {
-            $sources[]=$coll_source;
-          }
+          $sources[]=$coll_source;
         }
         //authors
         if (isset($coll_decode["creator"])) {
           $coll_author = $coll_decode["creator"];
-          if (!in_array($coll_author, $authors)) {
-            $authors[]=$coll_author;
-          }
+          $authors[]=$coll_author;
         }
 
         //gender
         if (isset($coll_decode["creator_gender"])) {
           $coll_gender = $coll_decode["creator_gender"];
-          if (!in_array($coll_gender, $genders)) {
-            $genders[]=$coll_gender;
-          }
+          $genders[]=$coll_gender;
         }
         //language
         if (isset($coll_decode["language"])) {
           $coll_language = $coll_decode["language"];
-          if (!in_array($coll_language, $languages)) {
-            $languages[]=$coll_language;
-          }
+          $languages[]=$coll_language;
         }
         //dates_sent
         if (isset($coll_decode["date_created"])) {
           $coll_date_sent = $coll_decode["date_created"];
-          if (!in_array($coll_date_sent, $dates_sent)) {
-            $dates_sent[]=$coll_date_sent;
-          }
+          $dates_sent[]=$coll_date_sent;
         }
       }
 
-
       $data = array(
-        "keywords"=> $keywords,
-        "sources"=> $sources,
-        "authors"=> $authors,
-        "genders"=> $genders,
-        "languages"=> $languages,
-        "dates_sent"=> $dates_sent,
+        "keywords"=> array_count_values($keywords),
+        "sources"=> array_count_values($sources),
+        "authors"=> array_count_values($authors),
+        "genders"=> array_count_values($genders),
+        "languages"=> array_count_values($languages),
+        "dates_sent"=> array_count_values($dates_sent),
       );
 
       return $this->prepareResult(true, $data, [], "All user entries");

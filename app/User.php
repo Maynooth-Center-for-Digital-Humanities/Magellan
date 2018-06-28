@@ -18,7 +18,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password',
+        'name', 'email', 'password','activation_code','status'
     ];
 
     protected static function boot() {
@@ -72,6 +72,21 @@ class User extends Authenticatable
 
     public function afterSave($user){
             //
+    }
+
+    public function transcriptions()
+    {
+        return $this->belongsToMany('App\Entry', 'user_transcriptions', 'user_id', 'entry_id')->withTimestamps();
+    }
+
+    public function entryLock()
+    {
+        return $this->belongsToMany('App\Entry','entry_locks','entry_id','user_id','locked_at')->withTimestamps();
+    }
+
+    public function rights()
+    {
+        return $this->belongsToMany('App\Rights', 'user_rights', 'user_id', 'rights_id')->withTimestamps();
     }
 
 }

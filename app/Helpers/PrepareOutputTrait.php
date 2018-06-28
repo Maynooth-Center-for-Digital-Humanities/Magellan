@@ -58,4 +58,22 @@ trait PrepareOutputTrait
       else return false;
     }
 
+    public function getEntryStatus($pages) {
+      $status = 0;
+      $page_count = count($pages);
+      $expected_total = $page_count*2;
+      $transcriptions_total = 0;
+      foreach($pages as $page) {
+        $transcription_status=0;
+        if (isset($page['transcription_status'])) {
+          $transcription_status = $page['transcription_status'];
+        }
+        $transcriptions_total += intval($transcription_status);
+      }
+      if ($expected_total===$transcriptions_total) {
+        $status = 1;
+      }
+      return $status;
+    }
+
 }

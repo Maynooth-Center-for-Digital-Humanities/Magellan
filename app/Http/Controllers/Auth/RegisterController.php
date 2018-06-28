@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\User;
+use App\Notifications\UserRegisteredSuccessfully;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
+use Illuminate\Http\Request;
+use App\User;
 use App\Role;
+use App\Helpers\PrepareOutputTrait;
 
 class RegisterController extends Controller
 {
@@ -22,13 +24,7 @@ class RegisterController extends Controller
     */
 
     use RegistersUsers;
-
-    /**
-     * Where to redirect users after registration.
-     *
-     * @var string
-     */
-    protected $redirectTo = '/home';
+    use PrepareOutputTrait;
 
     /**
      * Create a new controller instance.
@@ -41,37 +37,69 @@ class RegisterController extends Controller
     }
 
     /**
-     * Get a validator for an incoming registration request.
+     * Register new user account
      *
-     * @param  array  $data
-     * @return \Illuminate\Contracts\Validation\Validator
+     * @param  Request $request
+     * @return outputTrait
      */
-    protected function validator(array $data)
+    protected function register(Request $request)
     {
-        return Validator::make($data, [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed',
+
+        $validatedData = $request->validate([
+          'name' => 'required|string|max:255',
+          'email' => 'required|string|email|max:255|unique:users',
+          'password' => 'required|string|min:6|confirmed',
         ]);
+        try {
+            $validatedData['password'] = bcrypt(array_get($validatedData, 'password'));
+            $validatedData['activation_code'] = str_random(30).time();
+
+            // remove when email service is added as default status is set to 0
+            $validatedData['status'] = 1;
+
+            $user = User::create($validatedData);
+            $user->roles()
+                ->attach(Role::where('name', 'transcriber')->first());
+
+            // needs to be rewritten to be more dynamic
+            if ($request->input('license_agreement')===true) {
+              $user->rights()->sync([1],false);
+            }
+            if ($request->input('subscribe_to_newsletter')===true) {
+              $user->rights()->sync([3],false);
+            }
+
+        } catch (\Exception $exception) {
+            return $this->prepareResult(false, [], 'Unable to create new user.', $exception);
+        }
+
+        /* when email service is configured enable to line below to send mail notifications
+        * $user->notify(new UserRegisteredSuccessfully($user));
+        */
+        return $this->prepareResult(true, [], [],'New user account created successfully. Please check your email to activate your new account.');
+
     }
 
     /**
-     * Create a new user instance after a valid registration.
-     *
-     * @param  array  $data
-     * @return \App\User
-     */
-    protected function create(array $data)
-    {
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => bcrypt($data['password']),
-        ]);
+    * Activate the user with given activation code.
+    * @param string $activationCode
+    * @return outputTrait
+    */
+   public function activateUser(string $activationCode)
+   {
+       try {
+           $user = app(User::class)->where('activation_code', $activationCode)->first();
+           if (!$user) {
+             return $this->prepareResult(false, [], "The provided activation code doesn't match any user in our database", []);
+           }
+           $user->status = 1;
+           $user->activation_code = null;
+           $user->save();
+           auth()->login($user);
+       } catch (\Exception $exception) {
 
-        $user->roles()
-            ->attach(Role::where('name', 'user')->first());
-
-        return $user;
-    }
+           return $this->prepareResult(false, [], "Undefined error", $exception);
+       }
+       return $this->prepareResult(false, [], "User account was activated successfully. Please login to start using your new account.", []);
+   }
 }

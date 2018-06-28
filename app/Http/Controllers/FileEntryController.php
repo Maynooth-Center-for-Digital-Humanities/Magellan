@@ -51,7 +51,8 @@ class FileEntryController extends Controller
 
                 $decode = json_decode($entry_format->getJsonData(),true);
                 $document_id = $decode['document_id'];
-
+                $entryPages = $decode['pages'];
+                $entry->status = $this->getEntryStatus($entryPages);
                 $entry->user_id = Auth::user()->id;
                 $entry->current_version = 1;
                 $entry->uploadedfile_id = $saved_file->id;
@@ -100,7 +101,7 @@ class FileEntryController extends Controller
     }
 
 
-    public function store($file, $format,$user){
+    public function store($file, $format, $user){
 
         $entry = new Uploadedfile();
         $entry->mime = $file->getClientMimeType();
@@ -126,6 +127,49 @@ class FileEntryController extends Controller
       );
 
       return response()->download($file, $original_filename, $headers);
+    }
+
+    public function makeThumbnail($filename, $thumbSize=200) {
+      $imgSrc = Storage::disk('fullsize')->path($filename);
+      $thumbs_path = Storage::disk('thumbnails')->path($filename);
+      $imgDetails = getimagesize($imgSrc);
+      $imgMime = $imgDetails['mime'];
+      list($width, $height) = getimagesize($imgSrc);
+
+  		if ($width > $height) {
+  		  $y = 0;
+  		  $x = ($width - $height) / 2;
+  		  $smallestSide = $height;
+  		}
+      else {
+  		  $x = 0;
+  		  $y = ($height - $width) / 2;
+  		  $smallestSide = $width;
+  		}
+
+  		// copying the part into thumbnail
+  		$thumbWidth = 200;
+  		$thumbHeight = 200;
+      if (isset($thumbSize)) {
+        $thumbWidth = $thumbSize;
+        $thumbWidth = $thumbSize;
+      }
+
+  		$thumb = imagecreatetruecolor($thumbWidth, $thumbHeight);
+      if ($imgMime==="image/jpeg") {
+        $newImage = imagecreatefromjpeg($imgSrc);
+      }
+      else if ($imgMime==="image/png") {
+        $newImage = imagecreatefrompng($imgSrc);
+      }
+      else if ($imgMime==="image/gif") {
+        $newImage = imagecreatefromgif($imgSrc);
+      }
+
+  		imagecopyresampled($thumb, $newImage, 0, 0, $x, $y, $thumbWidth, $thumbHeight, $smallestSide, $smallestSide);
+
+  		imagejpeg($thumb, $thumbs_path, 100);
+      imagedestroy( $thumb );
     }
 
 }

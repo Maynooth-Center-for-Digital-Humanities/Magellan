@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
 use Validator;
 use Hash;
 use Illuminate\Validation\Rule;
@@ -12,10 +14,14 @@ use App\Topic;
 use App\EntryTopic;
 use App\Helpers;
 use App\Uploadedfile;
+use App\UserTranscription;
+use App\Rights;
 use DB;
 use App\Pages as Pages;
 use App\EntryFormats as EntryFormats;
 use Illuminate\Http\Request;
+use App\Http\Controllers\FileEntryController;
+use Illuminate\Pagination\LengthAwarePaginator as Paginator;
 
 
 class ApiIngestionController extends Controller
@@ -165,6 +171,7 @@ class ApiIngestionController extends Controller
             $entry = new Entry();
             $entry->element = $request->getContent();
             $entry->user_id = Auth::user()->id;
+
             Entry::where('current_version', TRUE)->where('element->document_id', $request->document_id)->update(array('current_version'=>FALSE));
             $entry->current_version = TRUE;
             $entry->save();
@@ -174,6 +181,400 @@ class ApiIngestionController extends Controller
         }
 
     }
+
+    public function uploadLetter(Request $request,$id) {
+      $postData = $request->all();
+      $formData = json_decode($postData['form']);
+      $now = date("Y-m-d\TH:i:sP");
+      $images = array();
+      if (isset($postData['data'])) {
+        $images = $postData['data'];
+      }
+      $images_types = $formData->additional_img_info;
+
+      // topics
+      $topics = array();
+      $keywords = $formData->keywords;
+      foreach ($keywords as $keyword) {
+        $topic = array(
+          "topic_id"=>$keyword->value,
+          "topic_name"=>$keyword->label
+        );
+        $topics[] = $topic;
+      }
+
+      // date
+      $date_created = (string)$formData->year;
+      if (isset($formData->month) && $formData->month!=="") {
+        $date_created .= "-".$formData->month;
+      }
+      if (isset($formData->day) && $formData->day!=="") {
+        $date_created .= "-".$formData->day;
+      }
+      // source
+      $source = "";
+      if (gettype($formData->source)==="object") {
+        $source = $formData->source->value;
+      }
+      else {
+        $source = $formData->source;
+      }
+      // letter from
+      $letter_from = "";
+      if (gettype($formData->letter_from)==="object") {
+        $letter_from = $formData->letter_from->value;
+      }
+      else {
+        $letter_from = $formData->letter_from;
+      }
+      // letter to
+      $letter_to = "";
+      if (gettype($formData->letter_to)==="object") {
+        $letter_to = $formData->letter_to->value;
+      }
+      else {
+        $letter_to = $formData->letter_to;
+      }
+      if ($id===0) {
+        // pages
+        $pages = array();
+        $i=0;
+        // uploaded files
+        foreach($images as $image) {
+          // upload image and store
+          $fileEntryController = new FileEntryController();
+          $extension=$image->getClientOriginalExtension();
+          $filename = $image->getFilename().'.'.$extension;
+          Storage::disk('fullsize')->put($filename, File::get($image));
+          $fileEntryController->makeThumbnail($filename, 200);
+          $saved_file = $fileEntryController->store($image, "uploader page", Auth::user()->id);
+
+
+          $image_type = "Letter";
+          if(isset($images_types[$i])) {
+            $image_type = $images_types[$i];
+          }
+          $page = array(
+            // logged in user id
+            "rev_id"=>Auth::user()->id,
+  		      "page_id"=> "",
+            // logged in user name
+  		      "rev_name"=> Auth::user()->name,
+  		      "page_type"=> $image_type,
+  		      "page_count"=> $count,
+  		      "contributor"=> "",
+  		      "transcription"=> "",
+        		"archive_filename"=> $saved_file->filename,
+        		"original_filename"=> $image->getClientOriginalName(),
+        		"last_rev_timestamp"=> $now,
+        		"transcription_status"=> "0",
+        		"doc_collection_identifier"=> ""
+          );
+          $pages[]=$page;
+          $i++;
+        }
+
+        $count=1;
+        $newPages = array();
+        foreach($pages as $page) {
+          $page['page_count'] = $count;
+          $newPages[]=$page;
+          $count++;
+        }
+
+        $json_element = array(
+          "type"=>"uploader",
+  	      "debug"=>"",
+  	      "pages"=> $newPages,
+          "title"=> $formData->title,
+        	"gender"=> $formData->gender,
+        	"source"=> $source,
+          "topics"=> $topics,
+          "creator"=> $letter_from,
+          "user_id"=> Auth::user()->id,
+          "language" => $formData->language,
+          "recipient" => $letter_to,
+          "time_zone"=> "Europe/Dublin",
+          "collection"=> "",
+          "api_version"=> "1.0",
+          "description"=> $formData->additional_information,
+          "document_id"=> $postData['letter_id'],
+          "date_created"=>$date_created,
+          "number_pages"=>count($images),
+          "request_time"=>$now,
+          "terms_of_use"=>$formData->terms_of_use,
+          "collection_id"=>"",
+          "sent_location"=>$formData->creator_location,
+          "doc_collection"=>$formData->doc_collection,
+          "modified_timestamp"=>$now,
+          "recipient_location"=>$formData->recipient_location,
+          "copyright_statement"=>$formData->copyright_statement,
+          "year_of_death_of_author"=>$formData->year_of_death_of_author,
+        );
+        $error = false;
+        $format = "uploader";
+        $entry_format = EntryFormats\Factory::create($format);
+        $validator = $entry_format->valid($json_element);
+        if ($validator->fails()) {
+            $error = true;
+            $errors = $validator->errors();
+
+            return $this->prepareResult(false, [$errors], $error['errors'], "Error in creating entry");
+        }
+        else {
+            $entry = new Entry();
+            $entry->element = json_encode($json_element);
+            $entry->user_id = Auth::user()->id;
+            $entry->current_version = TRUE;
+            $entry->status = 0;
+            $entry->transcription_status = 0;
+            $entry->notes = $formData->notes;
+            $entry->save();
+
+            return $this->prepareResult(true, $entry, $error['errors'], "Entry created");
+        }
+
+      }
+      else if ($id>0) {
+        // pages
+        $pages = array();
+        if (count($formData->pages)>0) {
+          foreach($formData->pages as $newPage) {
+            $newPage = (array)$newPage;
+            $newPage['page_id']=0;
+            $pages[] = $newPage;
+          }
+        }
+
+        // uploaded files
+        $i=0;
+        foreach($images as $image) {
+          // upload image and store
+          $fileEntryController = new FileEntryController();
+          $extension=$image->getClientOriginalExtension();
+          $filename = $image->getFilename().'.'.$extension;
+          Storage::disk('fullsize')->put($filename, File::get($image));
+          $fileEntryController->makeThumbnail($filename, 200);
+          $saved_file = $fileEntryController->store($image, "uploader page", Auth::user()->id);
+
+
+          $image_type = "Letter";
+          if(isset($images_types[$i])) {
+            $image_type = $images_types[$i];
+          }
+          $page = array(
+            // logged in user id
+            "rev_id"=>Auth::user()->id,
+  		      "page_id"=> "",
+            // logged in user name
+  		      "rev_name"=> Auth::user()->name,
+  		      "page_type"=> $image_type,
+  		      "contributor"=> "",
+  		      "transcription"=> "",
+        		"archive_filename"=> $saved_file->filename,
+        		"original_filename"=> $image->getClientOriginalName(),
+        		"last_rev_timestamp"=> $now,
+        		"transcription_status"=> "0",
+        		"doc_collection_identifier"=> ""
+          );
+          $pages[]=$page;
+          $i++;
+        }
+        $count=1;
+        $newPages = array();
+        foreach($pages as $page) {
+          $page['page_count'] = $count;
+          $newPages[]=$page;
+          $count++;
+        }
+
+        // element
+        $json_element = array(
+          "type"=>"uploader",
+  	      "debug"=>"",
+  	      "pages"=> $newPages,
+          "title"=> $formData->title,
+        	"gender"=> $formData->gender,
+        	"source"=> $source,
+          "topics"=> $topics,
+          "creator"=> $letter_from,
+          "user_id"=> Auth::user()->id,
+          "language" => $formData->language,
+          "recipient" => $letter_to,
+          "time_zone"=> "Europe/Dublin",
+          "collection"=> "",
+          "api_version"=> "1.0",
+          "description"=> $formData->additional_information,
+          "document_id"=> $postData['letter_id'],
+          "date_created"=>$date_created,
+          "number_pages"=>$i,
+          "request_time"=>$now,
+          "terms_of_use"=>$formData->terms_of_use,
+          "collection_id"=>"",
+          "sent_location"=>$formData->creator_location,
+          "doc_collection"=>$formData->doc_collection,
+          "modified_timestamp"=>$now,
+          "recipient_location"=>$formData->recipient_location,
+          "copyright_statement"=>$formData->copyright_statement,
+          "year_of_death_of_author"=>$formData->year_of_death_of_author,
+        );
+
+        $error = false;
+        $format = "uploader";
+        $entry_format = EntryFormats\Factory::create($format);
+        $validator = $entry_format->valid($json_element);
+        if ($validator->fails()) {
+            $error = true;
+            $errors = $validator->errors();
+
+            return $this->prepareResult(false, [$errors], $error['errors'], "Error in updating entry");
+        }
+        else {
+            $entry = Entry::whereId($id)->update(array(
+              'element'=>json_encode($json_element),
+              'notes'=>$formData->notes
+              )
+            );
+            $json_element['notes'] = $formData->notes;
+            return $this->prepareResult(true, $json_element, $error['errors'], "Entry updated successfully");
+        }
+      }
+
+    }
+
+    public function updatePagesOrder(Request $request, $id) {
+      $error = array();
+      $pages = (array)$request->json('pages');
+      $entry = Entry::where('id', $id)->first();
+      $element = json_decode($entry->element, true);
+
+      $count=1;
+      $newPages = array();
+      foreach($pages as $page) {
+        $page['page_count'] = $count;
+        $newPages[]=$page;
+        $count++;
+      }
+
+      $element['pages'] = $newPages;
+      Entry::whereId($id)->update(['element'=>json_encode($element)]);
+
+      return $this->prepareResult(true, $pages, $error, "Pages order updated successfully");
+    }
+
+    public function letterTranscribe(Request $request, $id)
+    {
+        $msg = "Entry found";
+        $status = true;
+        // associate transcription with user
+        Auth::user()->transcriptions()->sync([$id],false);
+
+        // load entry
+        $entry = Entry::where('id', $id)->first();
+        if ($entry != null) {
+          $coll = json_decode($entry->element, true);
+          // handle entry lock
+          if (!$entry->handleEntryLock()) {
+            $status = false;
+            return $this->prepareResult($status, $coll, [], "This entry is in use by another user!", "Request complete");
+          }
+        }
+        else {
+          $coll = "";
+          $msg = "Entry not found";
+          $status = false;
+
+          abort(404, json_encode($this->prepareResult($status, $coll, [], $msg, "Request failed")));
+        };
+
+        return $this->prepareResult($status, $coll, [], $msg, "Request complete");
+
+    }
+
+    public function updateTranscriptionStatus(Request $request, $id) {
+      $error = array();
+      $entry = Entry::where('id', $id)->first();
+      $transcription_status = -1;
+      $current_transcription_status = $entry->transcription_status;
+      if ($current_transcription_status===-1) {
+        $transcription_status = 0;
+      }
+      Entry::whereId($id)->update(['transcription_status'=>$transcription_status]);
+      return $this->prepareResult(true, $transcription_status, $error, "Letter transcription status updated successfully to ".$transcription_status);
+    }
+
+    public function updateTranscriptionPage(Request $request, $id){
+      $error = "";
+      $entry = Entry::where('id', $id)->first();
+      // handle entry lock
+      if (!$entry->handleEntryLock()) {
+        $status = false;
+        return $this->prepareResult($status, [], [], "This entry is in use by another user!", "Request complete");
+      }
+      if ($entry->transcription_status!==0) {
+        $error = "This item cannot be transcribed";
+        return $this->prepareResult(true, $id, $error, "Page transcription error");
+      }
+      $archive_filename = $request->archive_filename;
+      $transcription = $request->transcription;
+      $element = json_decode($entry->element, true);
+      $pages = $element['pages'];
+      $newPages = array();
+      foreach($pages as $page) {
+        if ($page['archive_filename']===$archive_filename) {
+          $page['transcription'] = addslashes($transcription);
+        }
+        $newPages[]=$page;
+      }
+      $element['pages']=$newPages;
+      Entry::whereId($id)->update(['element'=>json_encode($element)]);
+      return $this->prepareResult(true, $newPages, $error, "Page transcription updated successfully");
+    }
+
+    public function deleteLetterPage(Request $request) {
+      $error = array();
+      //print_r($request->pages);
+      $id = intval($request->json('id'));
+      $archive_filename = $request->json('archive_filename');
+      $entry = Entry::where('id', $id)->first();
+      $element = json_decode($entry->element, true);
+      $pages = $element['pages'];
+      $newPages = array();
+      $i=1;
+      foreach($pages as $page) {
+        if ($page['archive_filename']!==$archive_filename) {
+          $page['page_count']=$i;
+          $newPages[]=$page;
+          $i++;
+        }
+      }
+      // delete file from storage
+      Storage::disk('fullsize')->delete($archive_filename);
+      Storage::disk('thumbnails')->delete($archive_filename);
+      $element['pages'] = $newPages;
+      Entry::whereId($id)->update(['element'=>json_encode($element)]);
+
+      return $this->prepareResult(true, $newPages, $error, "Page deleted successfully");
+    }
+
+    public function deleteLetter(Request $request) {
+      $error = array();
+      //print_r($request->pages);
+      $id = intval($request->json('id'));
+      $entry = Entry::where('id', $id)->first();
+      $response = $entry->deleteEntry($entry, Auth::user()->id);
+
+      return $this->prepareResult(true, $response, $error, "Letter deleted successfully");
+    }
+
+    public function removeTranscriptionAssociation(Request $request) {
+      $id = $request->input('id');
+      if ($id>0) {
+        Auth::user()->transcriptions()->detach($id);
+      }
+      return $this->prepareResult(true, [], [], "User transcriptions removed succesfully");
+    }
+
 
     public function fullsearch(Request $request, $sentence)
     {
@@ -218,7 +619,6 @@ class ApiIngestionController extends Controller
           }
 
       } else {
-
           $topic = Topic::select('id')->where('name','=',$expr)->firstOrFail();
           $results = EntryTopic::select('entry_id')->where('topic_id','=',$topic->id)->get();
 
@@ -249,46 +649,6 @@ class ApiIngestionController extends Controller
       return $this->prepareResult(true, $coll, [], "All user entries");
     }
 
-    public function accessToken(Request $request)
-    {
-
-        $validate = $this->validations($request, "login");
-        if ($validate["error"]) {
-
-            return \Response::json($this->prepareResult(false, [], $validate['errors'], "Error while validating user"), 400);
-
-        }
-
-        $user = User::where("email", $request->email)->first();
-
-        //Fabiano: For security reasons let's return only true or false without any hints on the type of error (pwd/username)
-        if ($user) {
-
-            if (Hash::check($request->password, $user->password)) {
-                return $this->prepareResult(true, ["userName"=>$user->name, "accessToken" => $user->createToken('ApiIngestion')->accessToken], [], "User Verified");
-            } else {
-                return $this->prepareResult(false, [], ["password" => "Wrong passowrd"], "Password not matched");
-            }
-        } else {
-            return $this->prepareResult(false, [], ["email" => "Unable to find user"], "User not found");
-        }
-
-    }
-
-
-    public function resetAccessToken()
-    {
-
-        $user = Auth::user();
-
-        if ($user) {
-            Auth::user()->token()->revoke();
-            Auth::user()->token()->delete();
-        }
-
-        return $this->prepareResult(true, [], ["user" => "User logout"], "User logout");
-
-    }
 
     /**
      * Get a validator for an incoming ApiIngestion request.
@@ -298,55 +658,13 @@ class ApiIngestionController extends Controller
      * @return \Illuminate\Contracts\Validation\Validator
      */
 
-    public function validations($request, $type)
-    {
-        $errors = [];
-        $error = false;
-        if ($type == "login") {
-            $validator = Validator::make($request->all(), [
-                'email' => 'required|email|max:255',
-                'password' => 'required',
-            ]);
-
-            if ($validator->fails()) {
-                $error = true;
-                $errors = $validator->errors();
-            }
-
-        } elseif ($type == "show entry") {
-
-            $validator = Validator::make($request->all(), [
-                'id' => 'required',
-            ]);
-
-            if ($validator->fails()) {
-                $error = true;
-                $errors = $validator->errors();
-            }
-        } elseif ($type == "store entry") {
-
-            $validator = Validator::make($request->all(), [
-                'id' => 'required',
-                'element' => 'required'
-            ]);
-
-
-            if ($validator->fails()) {
-                $error = true;
-                $errors = $validator->errors() . Entry::validate($request->payload())->errors();
-
-            }
-        }
-        return ["error" => $error, "errors" => $errors];
-
-    }
 
     public function sources() {
 
-      $sources = Entry::select(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source'))) as source, COUNT(*) AS count"))
-      ->whereNotNull(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source')))"))
-      ->groupBy(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source')))"))
-      ->orderBy(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source')))"))
+      $sources = Entry::select(DB::raw("(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source'))) as source, COUNT(*) AS count"))
+      ->whereNotNull(DB::raw("(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source')))"))
+      ->groupBy(DB::raw("(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source')))"))
+      ->orderBy(DB::raw("(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source')))"))
       ->get();
 
       return $this->prepareResult(true, $sources, [], "All user entries");
@@ -396,6 +714,8 @@ class ApiIngestionController extends Controller
     {
       $sort = "asc";
       $paginate = 10;
+      $status = null;
+      $transcription_status = null;
       $keywords_ids = array();
       $sources = array();
       $authors = array();
@@ -409,6 +729,12 @@ class ApiIngestionController extends Controller
       if ($request->input('paginate')!=="") {
         $paginate = $request->input('paginate');
       }
+      if ($request->input('status')!=="") {
+        $status = $request->input('status');
+      }
+      if ($request->input('transcription_status')!=="") {
+        $transcription_status = $request->input('transcription_status');
+      }
       if ($request->input('keywords')) {
         $keywords_ids = $request->input('keywords');
       }
@@ -428,18 +754,36 @@ class ApiIngestionController extends Controller
         $date_sent = $request->input('date_sent');
       }
 
+      if ($status===null || $transcription_status===null) {
+        return $this->prepareResult(true, [], [], "Please set the status and transcription status.");
+      }
+
       $entry_ids = array();
       // keywords
       if (count($keywords_ids)>0) {
-        $keywords_entry_ids = EntryTopic::select('entry_id as id')->whereIn('topic_id',$keywords_ids)->get();
+        $keywords_ids_num = count($keywords_ids);
+        $keywords_entry_ids = EntryTopic::select('entry_id', DB::raw('COUNT(entry_id) as c'))
+        ->whereIn('topic_id',$keywords_ids)
+        ->groupBy('entry_id')
+        ->havingRaw('c='.$keywords_ids_num)
+        ->get();
         $keywords_entry_ids = $keywords_entry_ids->toArray();
-        $keywords_entry_ids = $this->returnIdsArray($keywords_entry_ids);
-        $entry_ids[] = $keywords_entry_ids;
+        $new_keywords_entry_ids = array();
+        foreach($keywords_entry_ids as $keywords_entry_id) {
+          $new_keywords_entry_ids[]=$keywords_entry_id['entry_id'];
+        }
+        $entry_ids[] = $new_keywords_entry_ids;
       }
       // sources
       if (count($sources)>0) {
         $new_sources = $this->inputArraytoString($sources);
-        $sources_ids = Entry::select("id")->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source'))) IN (".$new_sources.")"))->get();
+        $sources_ids = Entry::select("id")
+          ->where([
+            ['status','=', $status],
+            ['transcription_status','=', $transcription_status],
+            ])
+          ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source'))) IN (".$new_sources.")"))
+          ->get();
         $sources_entry_ids = $sources_ids->toArray();
         $sources_entry_ids = $this->returnIdsArray($sources_entry_ids);
         if (!empty($entry_ids[0])) {
@@ -458,7 +802,13 @@ class ApiIngestionController extends Controller
       // authors
       if (count($authors)>0) {
         $new_authors = $this->inputArraytoString($authors);
-        $authors_ids = Entry::select("id")->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))) IN (".$new_authors.")"))->get();
+        $authors_ids = Entry::select("id")
+          ->where([
+            ['status','=', $status],
+            ['transcription_status','=', $transcription_status],
+            ])
+          ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))) IN (".$new_authors.")"))
+          ->get();
         $authors_entry_ids = $authors_ids->toArray();
         $authors_entry_ids = $this->returnIdsArray($authors_entry_ids);
         if (!empty($entry_ids[0])) {
@@ -477,7 +827,13 @@ class ApiIngestionController extends Controller
       // genders
       if (count($genders)>0) {
         $new_genders = $this->inputArraytoString($genders);
-        $genders_ids = Entry::select("id")->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender'))) IN (".$new_genders.")"))->get();
+        $genders_ids = Entry::select("id")
+          ->where([
+            ['status','=', $status],
+            ['transcription_status','=', $transcription_status],
+            ])
+          ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender'))) IN (".$new_genders.")"))
+          ->get();
         $genders_entry_ids = $genders_ids->toArray();
         $genders_entry_ids = $this->returnIdsArray($genders_entry_ids);
         if (!empty($entry_ids[0])) {
@@ -496,7 +852,13 @@ class ApiIngestionController extends Controller
       // languages
       if (count($languages)>0) {
         $new_languages = $this->inputArraytoString($languages);
-        $languages_ids = Entry::select("id")->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.language'))) IN (".$new_languages.")"))->get();
+        $languages_ids = Entry::select("id")
+          ->where([
+            ['status','=', $status],
+            ['transcription_status','=', $transcription_status],
+            ])
+          ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.language'))) IN (".$new_languages.")"))
+          ->get();
         $languages_entry_ids = $languages_ids->toArray();
         $languages_entry_ids = $this->returnIdsArray($languages_entry_ids);
         if (!empty($entry_ids[0])) {
@@ -515,7 +877,13 @@ class ApiIngestionController extends Controller
       // date_created
       if (count($date_sent)>0) {
         $new_date_created = $this->inputArraytoString($date_sent);
-        $date_created_ids = Entry::select("id")->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created'))) IN (".$new_date_created.")"))->get();
+        $date_created_ids = Entry::select("id")
+          ->where([
+            ['status','=', $status],
+            ['transcription_status','=', $transcription_status],
+            ])
+          ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created'))) IN (".$new_date_created.")"))
+          ->get();
         $date_created_entry_ids = $date_created_ids->toArray();
         $date_created_entry_ids = $this->returnIdsArray($date_created_entry_ids);
         if (!empty($entry_ids[0])) {
@@ -533,10 +901,23 @@ class ApiIngestionController extends Controller
       }
 
       if (count($entry_ids)>0) {
-          $coll = Entry::whereIn('id',$entry_ids[0])->where('current_version', 1)->orderBy('created_at', $sort)->paginate($paginate);
+          $coll = Entry::whereIn('id',$entry_ids[0])
+            ->where([
+              ['current_version','=', 1],
+              ['status','=', $status],
+              ['transcription_status','=', $transcription_status],
+              ])
+            ->orderBy('created_at', $sort)
+            ->paginate($paginate);
       } else {
         if (Entry::first() != null) {
-          $coll = Entry::where('current_version', 1)->orderBy('created_at', $sort)->paginate($paginate);
+          $coll = Entry::where([
+            ['current_version','=', 1],
+            ['status','=', $status],
+            ['transcription_status','=', $transcription_status],
+            ])
+            ->orderBy('created_at', $sort)
+            ->paginate($paginate);
         } else {
             $coll = "empty bottle";
         };
@@ -548,6 +929,8 @@ class ApiIngestionController extends Controller
     public function indexfilteredFilters(Request $request)
     {
       $sort = "asc";
+      $status = null;
+      $transcription_status = null;
       $keywords_ids = array();
       $sources = array();
       $authors = array();
@@ -557,6 +940,12 @@ class ApiIngestionController extends Controller
 
       if ($request->input('sort')!=="") {
         $sort = $request->input('sort');
+      }
+      if ($request->input('status')!=="") {
+        $status = $request->input('status');
+      }
+      if ($request->input('transcription_status')!=="") {
+        $transcription_status = $request->input('transcription_status');
       }
       if ($request->input('keywords')) {
         $keywords_ids = $request->input('keywords');
@@ -577,36 +966,37 @@ class ApiIngestionController extends Controller
         $date_sent = $request->input('date_sent');
       }
 
+      if ($status===null || $transcription_status===null) {
+        return $this->prepareResult(true, [], [], "Please set the status and transcription status.");
+      }
+
       $entry_ids = array();
       // keywords
       if (count($keywords_ids)>0) {
-        $i=0;
-        $keywords_query = "";
-        foreach($keywords_ids as $keywords_id) {
-          if ($i===0) {
-            $keywords_query = 'SELECT '.$keywords_id.'entry_topic.entry_id as id FROM `entry_topic` as '.$keywords_id.'entry_topic';
-            $keywords_where = ' WHERE '.$keywords_id.'entry_topic.topic_id='.$keywords_id;
-          }
-          if ($i>0) {
-            $prev = $i-1;
-            $keywords_query .= ' INNER JOIN entry_topic as '.$keywords_id.'entry_topic '
-              .'ON '.$keywords_ids[$prev].'entry_topic.entry_id='.$keywords_id.'entry_topic.entry_id';
-            $keywords_where .= ' AND '.$keywords_id.'entry_topic.topic_id='.$keywords_id;
-          }
-          $i++;
+        $keywords_ids_num = count($keywords_ids);
+        $keywords_entry_ids = EntryTopic::select('entry_id', DB::raw('COUNT(entry_id) as c'))
+        ->whereIn('topic_id',$keywords_ids)
+        ->groupBy('entry_id')
+        ->havingRaw('c='.$keywords_ids_num)
+        ->get();
+        $keywords_entry_ids = $keywords_entry_ids->toArray();
+        $new_keywords_entry_ids = array();
+        foreach($keywords_entry_ids as $keywords_entry_id) {
+          $new_keywords_entry_ids[]=$keywords_entry_id['entry_id'];
         }
-        $keywords_query = $keywords_query.$keywords_where;
-        $keywords_entry_ids = DB::select($keywords_query);
-        $keywords_entry_ids = $this->returnIdsArray($keywords_entry_ids);
-        $entry_ids[] = $keywords_entry_ids;
+        $entry_ids[] = $new_keywords_entry_ids;
       }
 
       /// sources
       if (count($sources)>0) {
         $new_sources = $this->inputArraytoString($sources);
         $sources_ids = Entry::select("id")
-        ->whereRaw(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.source')) IN (".$new_sources.")"))
-        ->get();
+          ->where([
+            ['status','=', $status],
+            ['transcription_status','=', $transcription_status],
+            ])
+          ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source'))) IN (".$new_sources.")"))
+          ->get();
         $sources_entry_ids = $sources_ids->toArray();
         $sources_entry_ids = $this->returnIdsArray($sources_entry_ids);
         if (!empty($entry_ids[0])) {
@@ -626,7 +1016,13 @@ class ApiIngestionController extends Controller
       // authors
       if (count($authors)>0) {
         $new_authors = $this->inputArraytoString($authors);
-        $authors_ids = Entry::select("id")->whereRaw(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator')) IN (".$new_authors.")"))->get();
+        $authors_ids = Entry::select("id")
+          ->where([
+            ['status','=', $status],
+            ['transcription_status','=', $transcription_status],
+            ])
+          ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))) IN (".$new_authors.")"))
+          ->get();
         $authors_entry_ids = $authors_ids->toArray();
         $authors_entry_ids = $this->returnIdsArray($authors_entry_ids);
         if (!empty($entry_ids[0])) {
@@ -646,7 +1042,13 @@ class ApiIngestionController extends Controller
       // genders
       if (count($genders)>0) {
         $new_genders = $this->inputArraytoString($genders);
-        $genders_ids = Entry::select("id")->whereRaw(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender')) IN (".$new_genders.")"))->get();
+        $genders_ids = Entry::select("id")
+          ->where([
+            ['status','=', $status],
+            ['transcription_status','=', $transcription_status],
+            ])
+          ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender'))) IN (".$new_genders.")"))
+          ->get();
         $genders_entry_ids = $genders_ids->toArray();
         $genders_entry_ids = $this->returnIdsArray($genders_entry_ids);
         if (!empty($entry_ids[0])) {
@@ -662,10 +1064,17 @@ class ApiIngestionController extends Controller
           $entry_ids[] = $genders_entry_ids;
         }
       }
+
       // languages
       if (count($languages)>0) {
         $new_languages = $this->inputArraytoString($languages);
-        $languages_ids = Entry::select("id")->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.language'))) IN (".$new_languages.")"))->get();
+        $languages_ids = Entry::select("id")
+          ->where([
+            ['status','=', $status],
+            ['transcription_status','=', $transcription_status],
+            ])
+          ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.language'))) IN (".$new_languages.")"))
+          ->get();
         $languages_entry_ids = $languages_ids->toArray();
         $languages_entry_ids = $this->returnIdsArray($languages_entry_ids);
         if (!empty($entry_ids[0])) {
@@ -681,10 +1090,17 @@ class ApiIngestionController extends Controller
           $entry_ids[] = $languages_entry_ids;
         }
       }
+
       // date_created
       if (count($date_sent)>0) {
         $new_date_created = $this->inputArraytoString($date_sent);
-        $date_created_ids = Entry::select("id")->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created'))) IN (".$new_date_created.")"))->get();
+        $date_created_ids = Entry::select("id")
+          ->where([
+            ['status','=', $status],
+            ['transcription_status','=', $transcription_status],
+            ])
+          ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created'))) IN (".$new_date_created.")"))
+          ->get();
         $date_created_entry_ids = $date_created_ids->toArray();
         $date_created_entry_ids = $this->returnIdsArray($date_created_entry_ids);
         if (!empty($entry_ids[0])) {
@@ -702,10 +1118,23 @@ class ApiIngestionController extends Controller
       }
 
       if (count($entry_ids)>0) {
-          $coll = Entry::whereIn('id',$entry_ids[0])->where('current_version', 1)->orderBy('created_at', $sort)->get();
+          $coll = Entry::whereIn('id',$entry_ids[0])
+            ->where([
+              ['current_version','=', 1],
+              ['status','=', $status],
+              ['transcription_status','=', $transcription_status],
+              ])
+            ->orderBy('created_at', $sort)
+            ->get();
       } else {
         if (Entry::first() != null) {
-          $coll = Entry::where('current_version', 1)->orderBy('created_at', $sort)->get();
+          $coll = Entry::where([
+            ['current_version','=', 1],
+            ['status','=', $status],
+            ['transcription_status','=', $transcription_status],
+            ])
+          ->orderBy('created_at', $sort)
+          ->get();
         } else {
             $coll = "empty bottle";
         };
@@ -719,10 +1148,8 @@ class ApiIngestionController extends Controller
       $languages = array();
       $dates_sent = array();
 
-      //dd($coll);
       for ($i=0;$i<count($coll); $i++) {
         $coll_decode = json_decode($coll[$i]["element"], true);
-
         // keywords
         if (isset($coll_decode["topics"])) {
           $coll_keywords = $coll_decode["topics"];
@@ -759,7 +1186,7 @@ class ApiIngestionController extends Controller
           $dates_sent[]=$coll_date_sent;
         }
       }
-
+      //dd($keywords);
       $data = array(
         "keywords"=> array_count_values($keywords),
         "sources"=> array_count_values($sources),
@@ -772,4 +1199,8 @@ class ApiIngestionController extends Controller
       return $this->prepareResult(true, $data, [], "All user entries");
     }
 
+    public function rights(Request $request) {
+      $rights = Rights::where("status",1)->get();
+      return $this->prepareResult(true, $rights, [], "All available rights");
+    }
 }

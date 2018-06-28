@@ -19,7 +19,6 @@ class Factory
 
         $provider = self::findProviderClassname($provider_name,$locale);
 
-
         try {
 
             $provider_class = new $provider();

@@ -12,20 +12,29 @@ class RoleTableSeeder extends Seeder
      */
     public function run()
     {
-        $role_admin = new Role();
-        $role_admin->name = "admin";
-        $role_admin->description = "Super user";
-        $role_admin->save();
 
-        $role_user = new Role();
-        $role_user->name = "user";
-        $role_user->description = "Use of the web interface";
-        $role_user->save();
+        if (Role::where('name','=','admin')->first()===null) {
+          $role_admin = new Role();
+          $role_admin->name = "admin";
+          $role_admin->is_admin = 1;
+          $role_admin->description = "Super user";
+          $role_admin->save();
+        }
 
-        $role_admin = new Role();
-        $role_admin->name = "robot";
-        $role_admin->description = "Users for the API";
-        $role_admin->save();
+        if (Role::where('name','=','transcriber')->first()===null) {
+          $role_user = new Role();
+          $role_user->name = "transcriber";
+          $role_user->default = 1;
+          $role_user->description = "Registered user with transcribe rights";
+          $role_user->save();
+        }
+
+        if (Role::where('name','=','robot')->first()===null) {
+          $role_admin = new Role();
+          $role_admin->name = "robot";
+          $role_admin->description = "Users for the API";
+          $role_admin->save();
+        }
 
     }
 }

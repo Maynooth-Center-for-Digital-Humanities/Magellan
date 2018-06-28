@@ -55,6 +55,34 @@ return [
             'visibility' => 'public',
         ],
 
+        'fullsize' => [
+            'driver' => 'local',
+            'root' => storage_path('app/archive/fullsize'),
+            'url' => env('APP_URL').'/diyhistory/archive/fullsize/',
+            'visibility' => 'public',
+        ],
+
+        'thumbnails' => [
+            'driver' => 'local',
+            'root' => storage_path('app/archive/square_thumbnails/'),
+            'url' => env('APP_URL').'/diyhistory/archive/square_thumbnails/',
+            'visibility' => 'public',
+        ],
+
+        'xml_public' => [
+            'driver' => 'local',
+            'root' => storage_path('app/archive/xml/public'),
+            'url' => env('APP_URL').'/diyhistory/archive/xml/public',
+            'visibility' => 'public',
+        ],
+
+        'xml_source' => [
+            'driver' => 'local',
+            'root' => storage_path('app/archive/xml/source'),
+            'url' => env('APP_URL').'/diyhistory/archive/xml/source',
+            'visibility' => 'public',
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_KEY'),

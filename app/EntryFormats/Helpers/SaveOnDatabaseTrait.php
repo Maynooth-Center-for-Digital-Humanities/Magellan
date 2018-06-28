@@ -28,8 +28,11 @@ trait SaveOnDatabaseTrait
 
     private function savePages($all_pages,$entry,$title,$description){
 
-
         $transcription="";
+        $transcription_status=0;
+        if (isset($page->transcription_status)) {
+          $transcription_status = $page->transcription_status;
+        }
         $pgn=0;
         foreach($all_pages as $page){
             $transcription.= " ".strip_tags($page->transcription);
@@ -44,12 +47,12 @@ trait SaveOnDatabaseTrait
         $pg->text_body=$transcription;
         $pg->page_number=$pgn;
         $pg->entry_id=$entry->id;
+        $pg->transcription_status=$transcription_status;
         $pg->save();
 
     }
 
     private function saveTopics($all_topics,$entry){
-
         foreach($all_topics as $topic){
 
             $find_topic_name = Topic::where('topic_id',$topic->topic_id)->first();

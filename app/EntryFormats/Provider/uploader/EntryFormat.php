@@ -1,12 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: fabianopallonetto
- * Date: 18/01/2018
- * Time: 09:02
- */
 
-namespace App\EntryFormats\Provider\omeka;
+namespace App\EntryFormats\Provider\uploader;
 
 use Illuminate\Validation\Rule as Rule;
 use App\EntryFormats\EntryFormatInterface as EntryFormatInterface;
@@ -20,8 +14,8 @@ class EntryFormat implements EntryFormatInterface
 
     protected $spec = [
         'api_version' => 'required|string|max:255',
-        'collection' => 'required|string|max:255',
-        'collection_id' => 'required|integer|max:255',
+        'collection' => 'string|max:255',
+        'collection_id' => 'integer|max:255',
         'copyright_statement' => 'required|string|max:1500',
         'creator' => 'nullable|string|max:255',
         'creator_gender' => array('Female','Male'),
@@ -39,7 +33,7 @@ class EntryFormat implements EntryFormatInterface
         'pages.*.last_rev_timestamp'=>'date|required|date_format:Y-m-d\TH:i:sP',
         'pages.*.original_filename'=>'required|max:255',
         'pages.*.page_count'=>'required|integer',
-        'pages.*.page_id'=>'required|integer',
+        'pages.*.page_id'=>'integer',
         'pages.*.page_type'=>'nullable|string|max:50',
         'pages.*.rev_id'=>'required|integer',
         'pages.*.rev_name'=>'required|max:255',

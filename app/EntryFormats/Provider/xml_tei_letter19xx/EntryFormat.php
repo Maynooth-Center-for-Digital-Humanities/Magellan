@@ -60,6 +60,7 @@ class EntryFormat implements EntryFormatInterface
         'pages.*.rev_id'=>'required|integer',
         'pages.*.rev_name'=>'required|max:255',
         'pages.*.transcription'=>'max:1500',
+        'pages.*.transcription_status'=>'required|integer',
         'recipient'=>'nullable|max:255',
         'recipient_location'=>'max:255',
         'request_time'=>'date|required|date_format:Y-m-d\TH:i:sP',

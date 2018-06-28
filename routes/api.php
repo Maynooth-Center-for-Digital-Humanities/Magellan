@@ -13,20 +13,61 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::get('/login','ApiIngestionController@accessToken');
+Route::post('/login','Auth\LoginController@accessToken');
 
+Route::post('/register/','Auth\RegisterController@register');
+
+Route::get('/verify-user/{code}', 'Auth\RegisterController@activateUser')->name('activate.user');
+
+Route::get('/rights', 'ApiIngestionController@rights');
+
+// registered users
 Route::group(['middleware' => ['api','auth:api']], function(){
 
-        Route::post('/add/','ApiIngestionController@store');
+      Route::post('/add/','ApiIngestionController@store');
 
-        Route::get('/logout/','ApiIngestionController@resetAccessToken');
+      Route::get('/logout/','Auth\LoginController@resetAccessToken');
 
-        Route::post('/fileupload',[
-                'as' => 'addentry', 'uses' => 'FileEntryController@add']);
+      Route::post('/fileupload',[
+              'as' => 'addentry', 'uses' => 'FileEntryController@add']);
 
-        Route::get('/indexall/','ApiIngestionController@indexAll');
+      Route::get('/indexall/','ApiIngestionController@indexAll');
 
-    });
+      Route::post('/upload-letter/{id}','ApiIngestionController@uploadLetter');
+
+      Route::post('/update-letter-pages-order/{id}','ApiIngestionController@updatePagesOrder');
+
+      Route::post('/update-letter-transcription-status/{id}','ApiIngestionController@updateTranscriptionStatus');
+
+      Route::post('/update-letter-transcription-page/{id}','ApiIngestionController@updateTranscriptionPage');
+
+      Route::delete('/delete-letter-page','ApiIngestionController@deleteLetterPage');
+
+      Route::delete('/delete-letter','ApiIngestionController@deleteLetter');
+
+      Route::delete('/remove-transcription-association','ApiIngestionController@removeTranscriptionAssociation');
+
+      Route::get('/letter-transcribe/{id}','ApiIngestionController@letterTranscribe');
+
+
+      // user
+      Route::get('/user-profile','UserController@userProfile');
+
+      Route::post('/update-user','UserController@userUpdate');
+
+      Route::post('/update-user-password','UserController@userUpdatePassword');
+
+      Route::get('/forget-me','UserController@userForget');
+
+      Route::get('/user-letters','UserController@userLetters');
+
+      Route::get('/user-transcriptions','UserController@userTranscriptions');
+
+      Route::get('/user-letter/{id}','UserController@userLetter');
+
+      Route::get('/transcriptions-list','ApiIngestionController@transcriptionsList');
+
+  });
 
 
 

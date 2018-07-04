@@ -491,17 +491,6 @@ class ApiIngestionController extends Controller
 
     }
 
-    public function updateTranscriptionStatus(Request $request, $id) {
-      $error = array();
-      $entry = Entry::where('id', $id)->first();
-      $transcription_status = -1;
-      $current_transcription_status = $entry->transcription_status;
-      if ($current_transcription_status===-1) {
-        $transcription_status = 0;
-      }
-      Entry::whereId($id)->update(['transcription_status'=>$transcription_status]);
-      return $this->prepareResult(true, $transcription_status, $error, "Letter transcription status updated successfully to ".$transcription_status);
-    }
 
     public function updateTranscriptionPage(Request $request, $id){
       $error = "";
@@ -721,7 +710,8 @@ class ApiIngestionController extends Controller
       $authors = array();
       $genders = array();
       $languages = array();
-      $date_sent = array();
+      $date_start = null;
+      $date_end = null;
 
       if ($request->input('sort')!=="") {
         $sort = $request->input('sort');
@@ -750,8 +740,11 @@ class ApiIngestionController extends Controller
       if ($request->input('languages')) {
         $languages = $request->input('languages');
       }
-      if ($request->input('date_sent')) {
-        $date_sent = $request->input('date_sent');
+      if ($request->input('date_start')) {
+        $date_start = $request->input('date_start');
+      }
+      if ($request->input('date_end')) {
+        $date_end = $request->input('date_end');
       }
 
       if ($status===null || $transcription_status===null) {
@@ -875,29 +868,37 @@ class ApiIngestionController extends Controller
         }
       }
       // date_created
-      if (count($date_sent)>0) {
-        $new_date_created = $this->inputArraytoString($date_sent);
+      if ($date_start!==null || $date_end!==null) {
+        if ($date_start!==null && $date_end===null) {
+          $date_end = $date_start;
+        }
+        $date_start = date($date_start);
+        $date_end = date($date_end);
         $date_created_ids = Entry::select("id")
           ->where([
             ['status','=', $status],
             ['transcription_status','=', $transcription_status],
             ])
-          ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created'))) IN (".$new_date_created.")"))
+          ->whereBetween(DB::raw("CAST(TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created'))) AS DATE)"), [$date_start, $date_end])
           ->get();
-        $date_created_entry_ids = $date_created_ids->toArray();
-        $date_created_entry_ids = $this->returnIdsArray($date_created_entry_ids);
-        if (!empty($entry_ids[0])) {
-          $new_ids = array();
-          foreach($entry_ids[0] as $entry_id) {
-            if (in_array($entry_id,$date_created_entry_ids)) {
-              $new_ids[]=$entry_id;
+        if(count($date_created_ids)>0) {
+          $date_created_entry_ids = $date_created_ids->toArray();
+          $date_created_entry_ids = $this->returnIdsArray($date_created_entry_ids);
+          if (!empty($entry_ids[0])) {
+            $new_ids = array();
+            foreach($entry_ids[0] as $entry_id) {
+              if (in_array($entry_id,$date_created_entry_ids)) {
+                $new_ids[]=$entry_id;
+              }
             }
+            $entry_ids[0] = $new_ids;
           }
-          $entry_ids[0] = $new_ids;
+          else {
+            $entry_ids[] = $date_created_entry_ids;
+          }
         }
-        else {
-          $entry_ids[] = $date_created_entry_ids;
-        }
+        else $entry_ids[] = [];
+
       }
 
       if (count($entry_ids)>0) {
@@ -936,7 +937,8 @@ class ApiIngestionController extends Controller
       $authors = array();
       $genders = array();
       $languages = array();
-      $date_sent = array();
+      $date_start = null;
+      $date_end = null;
 
       if ($request->input('sort')!=="") {
         $sort = $request->input('sort');
@@ -962,8 +964,11 @@ class ApiIngestionController extends Controller
       if ($request->input('languages')) {
         $languages = $request->input('languages');
       }
-      if ($request->input('date_sent')) {
-        $date_sent = $request->input('date_sent');
+      if ($request->input('date_start')) {
+        $date_start = $request->input('date_start');
+      }
+      if ($request->input('date_end')) {
+        $date_end = $request->input('date_end');
       }
 
       if ($status===null || $transcription_status===null) {
@@ -1092,29 +1097,36 @@ class ApiIngestionController extends Controller
       }
 
       // date_created
-      if (count($date_sent)>0) {
-        $new_date_created = $this->inputArraytoString($date_sent);
+      if ($date_start!==null || $date_end!==null) {
+        if ($date_start!==null && $date_end===null) {
+          $date_end = $date_start;
+        }
+        $date_start = date($date_start);
+        $date_end = date($date_end);
         $date_created_ids = Entry::select("id")
           ->where([
             ['status','=', $status],
             ['transcription_status','=', $transcription_status],
             ])
-          ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created'))) IN (".$new_date_created.")"))
+          ->whereBetween(DB::raw("CAST(TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created'))) AS DATE)"), [$date_start, $date_end])
           ->get();
-        $date_created_entry_ids = $date_created_ids->toArray();
-        $date_created_entry_ids = $this->returnIdsArray($date_created_entry_ids);
-        if (!empty($entry_ids[0])) {
-          $new_ids = array();
-          foreach($entry_ids[0] as $entry_id) {
-            if (in_array($entry_id,$date_created_entry_ids)) {
-              $new_ids[]=$entry_id;
+        if(count($date_created_ids)>0) {
+          $date_created_entry_ids = $date_created_ids->toArray();
+          $date_created_entry_ids = $this->returnIdsArray($date_created_entry_ids);
+          if (!empty($entry_ids[0])) {
+            $new_ids = array();
+            foreach($entry_ids[0] as $entry_id) {
+              if (in_array($entry_id,$date_created_entry_ids)) {
+                $new_ids[]=$entry_id;
+              }
             }
+            $entry_ids[0] = $new_ids;
           }
-          $entry_ids[0] = $new_ids;
+          else {
+            $entry_ids[] = $date_created_entry_ids;
+          }
         }
-        else {
-          $entry_ids[] = $date_created_entry_ids;
-        }
+        else $entry_ids[] = [];
       }
 
       if (count($entry_ids)>0) {

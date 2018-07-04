@@ -31,6 +31,7 @@ class UserController extends Controller
     $num_transcriptions = $user->transcriptions->count();
     $user['num_letters'] = $num_letters;
     $user['num_transcriptions'] = $num_transcriptions;
+    $user['roles'] = $user->roles;
     return $this->prepareResult(true, $user, [], "User details");
   }
 

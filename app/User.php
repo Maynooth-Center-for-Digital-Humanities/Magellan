@@ -89,4 +89,15 @@ class User extends Authenticatable
         return $this->belongsToMany('App\Rights', 'user_rights', 'user_id', 'rights_id')->withTimestamps();
     }
 
+    public function isAdmin() {
+      $isAdmin = false;
+      $roles = $this->roles;
+      foreach($roles as $role) {
+        if ($role['is_admin']===1) {
+          $isAdmin = true;
+        }
+      }
+      return $isAdmin;
+    }
+
 }

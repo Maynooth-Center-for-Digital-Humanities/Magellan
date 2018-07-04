@@ -29,7 +29,7 @@ class LoginController extends Controller
 
     public function accessToken(Request $request)
     {
-      
+
         $validate = $this->validations($request, "login");
         if ($validate["error"]) {
 
@@ -41,14 +41,19 @@ class LoginController extends Controller
 
         //Fabiano: For security reasons let's return only true or false without any hints on the type of error (pwd/username)
         if ($user) {
-
-            if (Hash::check($request->password, $user->password)) {
-                return $this->prepareResult(true, ["userName"=>$user->name, "accessToken" => $user->createToken('ApiIngestion')->accessToken], [], "User Verified");
-            } else {
-                return $this->prepareResult(false, [], ["password" => "Wrong password"], "Password not matched");
-            }
+          $coll = array();
+          if (Hash::check($request->password, $user->password)) {
+            $coll = array(
+              "userName"=>$user->name,
+              "accessToken" => $user->createToken('ApiIngestion')->accessToken,
+              "roles"=>$user->roles
+            );
+            return $this->prepareResult(true,$coll, [], "User Verified");
+          } else {
+              return $this->prepareResult(false, [], ["password" => "Wrong password"], "Password not matched");
+          }
         } else {
-            return $this->prepareResult(false, [], ["email" => "Unable to find user"], "User not found");
+          return $this->prepareResult(false, [], ["email" => "Unable to find user"], "User not found");
         }
 
     }

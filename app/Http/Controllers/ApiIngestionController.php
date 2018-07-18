@@ -248,7 +248,7 @@ class ApiIngestionController extends Controller
           Storage::disk('fullsize')->put($filename, File::get($image));
           $fileEntryController->makeThumbnail($filename, 200);
           $saved_file = $fileEntryController->store($image, "uploader page", Auth::user()->id);
-
+          $count = $i+1;
 
           $image_type = "Letter";
           if(isset($images_types[$i])) {

@@ -235,7 +235,7 @@ class ApiIngestionController extends Controller
       else {
         $letter_to = $formData->letter_to;
       }
-      if ($id===0) {
+      if (intval($id)===0) {
         // pages
         $pages = array();
         $i=0;
@@ -335,7 +335,7 @@ class ApiIngestionController extends Controller
         }
 
       }
-      else if ($id>0) {
+      else if (intval($id)>0) {
         // pages
         $pages = array();
         if (count($formData->pages)>0) {

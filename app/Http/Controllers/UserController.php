@@ -133,11 +133,60 @@ class UserController extends Controller
 
   public function userForget() {
     $user = Auth::user();
-    $user['name'] = "Anonymous user";
-    $user['email'] = "";
-    $user['password'] = "";
-    $user->save();
-    $user->transcriptions()->sync([]);
-    $user->rights()->sync([]);
+    $response = [];
+
+    if (!$user->isAdmin()) {
+      $user['name'] = "Anonymous user";
+      $user['email'] = "";
+      $user['password'] = "";
+      $user->save();
+      $user->transcriptions()->sync([]);
+      $user->rights()->sync([]);
+      $response = array(
+        "status"=>"success"
+      );
+      return $this->prepareResult(true, $response, [], "User forgotten succesfully");
+    }
+    else {
+      $response = array(
+        "status"=>"error"
+      );
+      return $this->prepareResult(true, $response, [], "This user is an administrator. Administrator status must be removed before the user can be forgotten.");
+    }
+  }
+
+  public function subscribeToMailchimp(Request $request) {
+    $email = $request->input('email');
+    $url = "https://us8.api.mailchimp.com/3.0/lists/90977771c7/members/".md5($email);
+
+    $curl = curl_init();
+
+    curl_setopt_array($curl, array(
+      CURLOPT_URL => $url,
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_ENCODING => "",
+      CURLOPT_MAXREDIRS => 10,
+      CURLOPT_TIMEOUT => 30,
+      CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+      CURLOPT_CUSTOMREQUEST => "PUT",
+      CURLOPT_POSTFIELDS => "{\"email_address\":\"".$email."\", \"status\": \"subscribed\", \"status_if_new\": \"subscribed\"}",
+      CURLOPT_HTTPHEADER => array(
+        "Authorization: Basic bGV0dGVyczE5MTYyMzpiYWYzOWQ2NWZkM2FjNmUyZmZjNDg0YjIwZWVmYWIyOS11czg=",
+        "Cache-Control: no-cache",
+        "Content-Type: application/json",
+      ),
+    ));
+
+    $response = curl_exec($curl);
+    $err = curl_error($curl);
+
+    curl_close($curl);
+
+    if ($err) {
+      return $this->prepareResult(true, array("status"=>"error", "email"=>$email), [], $err);
+    } else {
+      return $this->prepareResult(true, array("status"=>"success", "email"=>$email), [], json_decode($response));
+    }
+
   }
 }

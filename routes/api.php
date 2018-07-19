@@ -53,6 +53,9 @@ Route::get('/genders/','ApiIngestionController@genders');
 Route::get('/languages/','ApiIngestionController@languages');
 Route::get('/date_created/','ApiIngestionController@date_created');
 
+// mailchimp
+Route::post('/subscribe-to-newsletter/','UserController@subscribeToMailchimp');
+
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });

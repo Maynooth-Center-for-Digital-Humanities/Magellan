@@ -29,7 +29,7 @@ class AdminController extends Controller
     }
     $transcriptions_data = Entry::where([
       ['status','=', 0],
-      ['transcription_status','=', 0],
+      ['transcription_status','<=', 0],
       ])->get();
     $count = count($transcriptions_data);
 

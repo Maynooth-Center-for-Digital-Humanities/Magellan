@@ -26,20 +26,18 @@ trait SaveOnDatabaseTrait
 
     }
 
-    private function savePages($all_pages,$entry,$title,$description){
-
+    private function savePages($all_pages,$entry,$title,$description) {
+      $find_page = Pages::where('entry_id',$entry->id)->delete();
+      $pgn=0;
+      foreach($all_pages as $page) {
         $transcription="";
         $transcription_status=0;
         if (isset($page->transcription_status)) {
           $transcription_status = $page->transcription_status;
         }
-        $pgn=0;
-        foreach($all_pages as $page){
-            $transcription.= " ".strip_tags($page->transcription);
-            $pgn++;
-        }
+        $transcription.= " ".strip_tags($page->transcription);
+        $pgn++;
 
-        $find_page = Pages::where('entry_id',$entry->id)->delete();
 
         $pg = new Pages();
         $pg->title = $title;
@@ -49,45 +47,47 @@ trait SaveOnDatabaseTrait
         $pg->entry_id=$entry->id;
         $pg->transcription_status=$transcription_status;
         $pg->save();
+      }
 
     }
 
     private function saveTopics($all_topics,$entry){
-        foreach($all_topics as $topic){
+      //$clear_entry_topics = $entry->topic()->delete();
+      $tp_ids = array();
+      foreach($all_topics as $topic){
 
-            $find_topic_name = Topic::where('topic_id',$topic->topic_id)->first();
-            $find_topic_id = Topic::where('name',$topic->topic_name)->first();
+        $find_topic_name = Topic::where('topic_id',$topic->topic_id)->first();
+        $find_topic_id = Topic::where('name',$topic->topic_name)->first();
+        $equally_null = (($find_topic_name == $find_topic_id) and is_null($find_topic_id) ? true : false );
 
-            $equally_null = (($find_topic_name == $find_topic_id) and is_null($find_topic_id) ? true : false );
 
+        if($equally_null){
 
-            if($equally_null){
+            $tp = new Topic();
+            $tp->name = $topic->topic_name;
+            $tp->topic_id = empty($topic->topic_id)? null:$topic->topic_id;
+            $tp->description = "";
+            $tp->count = 1;
+            $tp->save();
 
-                $tp = new Topic();
-                $tp->name = $topic->topic_name;
-                $tp->topic_id = empty($topic->topic_id)? null:$topic->topic_id;
-                $tp->description = "";
-                $tp->count = 1;
-                $tp->save();
+        }elseif (isset($find_topic_id->id)){
 
-            }elseif (isset($find_topic_id->id)){
+            $tp = $find_topic_id;
 
-                $tp = $find_topic_id;
+        }else{
 
-            }else{
+            // Fabiano @TODO LOG THE ERROR TO AN ERROR TABLE AND ASSIGN ONE TOPIC
 
-                // Fabiano @TODO LOG THE ERROR TO AN ERROR TABLE AND ASSIGN ONE TOPIC
-
-                $tp = $find_topic_name;
-
-            }
-
-            $entry->topic()->attach($tp->id);
-            $tp->increment('count');
+            $tp = $find_topic_name;
 
         }
+        $tp_ids[]=$tp->id;
+        $tp->increment('count');
 
-        return true;
+      }
+      $entry->topic()->sync($tp_ids);
+
+      return true;
 
     }
 }

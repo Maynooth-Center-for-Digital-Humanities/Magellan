@@ -15,9 +15,12 @@ class Entry extends Model
 
     protected static function boot() {
         static::created(function($entry) {
-            $entry->afterSave($entry);
+          $entry->afterSave($entry);
         });
 
+        static::updating(function($entry) {
+          $entry->afterSave($entry);
+        });
     }
 
     public function user()

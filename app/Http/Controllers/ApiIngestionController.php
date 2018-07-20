@@ -182,6 +182,16 @@ class ApiIngestionController extends Controller
 
     }
 
+    public function testAPI() {
+      $id = 1591;
+      $entry = new Entry();
+      $entry = Entry::whereId($id)->get();
+      $entry_pages = Pages::where('entry_id',$id)->get();
+
+
+      return $this->prepareResult(true, $entry_pages, [], "All user pages");
+    }
+
     public function uploadLetter(Request $request,$id) {
       $postData = $request->all();
       $formData = json_decode($postData['form']);
@@ -235,6 +245,7 @@ class ApiIngestionController extends Controller
       else {
         $letter_to = $formData->letter_to;
       }
+      $imgs_errors = array();
       if (intval($id)===0) {
         // pages
         $pages = array();
@@ -243,35 +254,40 @@ class ApiIngestionController extends Controller
         foreach($images as $image) {
           // upload image and store
           $fileEntryController = new FileEntryController();
-          $extension=$image->getClientOriginalExtension();
-          $filename = $image->getFilename().'.'.$extension;
-          Storage::disk('fullsize')->put($filename, File::get($image));
-          $fileEntryController->makeThumbnail($filename, 200);
-          $saved_file = $fileEntryController->store($image, "uploader page", Auth::user()->id);
-          $count = $i+1;
+          if ($fileEntryController->isImage($image)) {
+            $extension=$image->getClientOriginalExtension();
+            $filename = $image->getFilename().'.'.$extension;
+            Storage::disk('fullsize')->put($filename, File::get($image));
+            $fileEntryController->makeThumbnail($filename, 200);
+            $saved_file = $fileEntryController->store($image, "uploader page", Auth::user()->id);
+            $count = $i+1;
 
-          $image_type = "Letter";
-          if(isset($images_types[$i])) {
-            $image_type = $images_types[$i];
+            $image_type = "Letter";
+            if(isset($images_types[$i])) {
+              $image_type = $images_types[$i];
+            }
+            $page = array(
+              // logged in user id
+              "rev_id"=>Auth::user()->id,
+    		      "page_id"=> "",
+              // logged in user name
+    		      "rev_name"=> Auth::user()->name,
+    		      "page_type"=> $image_type,
+    		      "page_count"=> $count,
+    		      "contributor"=> "",
+    		      "transcription"=> "",
+          		"archive_filename"=> $saved_file->filename,
+          		"original_filename"=> $image->getClientOriginalName(),
+          		"last_rev_timestamp"=> $now,
+          		"transcription_status"=> "0",
+          		"doc_collection_identifier"=> ""
+            );
+            $pages[]=$page;
+            $i++;
           }
-          $page = array(
-            // logged in user id
-            "rev_id"=>Auth::user()->id,
-  		      "page_id"=> "",
-            // logged in user name
-  		      "rev_name"=> Auth::user()->name,
-  		      "page_type"=> $image_type,
-  		      "page_count"=> $count,
-  		      "contributor"=> "",
-  		      "transcription"=> "",
-        		"archive_filename"=> $saved_file->filename,
-        		"original_filename"=> $image->getClientOriginalName(),
-        		"last_rev_timestamp"=> $now,
-        		"transcription_status"=> "0",
-        		"doc_collection_identifier"=> ""
-          );
-          $pages[]=$page;
-          $i++;
+          else {
+            $imgs_errors[] = array("filename"=>$image->getClientOriginalName());
+          }
         }
 
         $count=1;
@@ -330,8 +346,9 @@ class ApiIngestionController extends Controller
             $entry->transcription_status = 0;
             $entry->notes = $formData->notes;
             $entry->save();
+            $error['files']=$imgs_errors;
 
-            return $this->prepareResult(true, $entry, $error['errors'], "Entry created");
+            return $this->prepareResult(true, $entry, $error, "Entry created");
         }
 
       }
@@ -350,35 +367,41 @@ class ApiIngestionController extends Controller
         $i=0;
         foreach($images as $image) {
           // upload image and store
+
           $fileEntryController = new FileEntryController();
-          $extension=$image->getClientOriginalExtension();
-          $filename = $image->getFilename().'.'.$extension;
-          Storage::disk('fullsize')->put($filename, File::get($image));
-          $fileEntryController->makeThumbnail($filename, 200);
-          $saved_file = $fileEntryController->store($image, "uploader page", Auth::user()->id);
+          if ($fileEntryController->isImage($image)) {
+            $extension=$image->getClientOriginalExtension();
+            $filename = $image->getFilename().'.'.$extension;
+            Storage::disk('fullsize')->put($filename, File::get($image));
+            $fileEntryController->makeThumbnail($filename, 200);
+            $saved_file = $fileEntryController->store($image, "uploader page", Auth::user()->id);
 
 
-          $image_type = "Letter";
-          if(isset($images_types[$i])) {
-            $image_type = $images_types[$i];
+            $image_type = "Letter";
+            if(isset($images_types[$i])) {
+              $image_type = $images_types[$i];
+            }
+            $page = array(
+              // logged in user id
+              "rev_id"=>Auth::user()->id,
+    		      "page_id"=> "",
+              // logged in user name
+    		      "rev_name"=> Auth::user()->name,
+    		      "page_type"=> $image_type,
+    		      "contributor"=> "",
+    		      "transcription"=> "",
+          		"archive_filename"=> $saved_file->filename,
+          		"original_filename"=> $image->getClientOriginalName(),
+          		"last_rev_timestamp"=> $now,
+          		"transcription_status"=> "0",
+          		"doc_collection_identifier"=> ""
+            );
+            $pages[]=$page;
+            $i++;
           }
-          $page = array(
-            // logged in user id
-            "rev_id"=>Auth::user()->id,
-  		      "page_id"=> "",
-            // logged in user name
-  		      "rev_name"=> Auth::user()->name,
-  		      "page_type"=> $image_type,
-  		      "contributor"=> "",
-  		      "transcription"=> "",
-        		"archive_filename"=> $saved_file->filename,
-        		"original_filename"=> $image->getClientOriginalName(),
-        		"last_rev_timestamp"=> $now,
-        		"transcription_status"=> "0",
-        		"doc_collection_identifier"=> ""
-          );
-          $pages[]=$page;
-          $i++;
+          else {
+            $imgs_errors[] = array("filename"=>$image->getClientOriginalName());
+          }
         }
         $count=1;
         $newPages = array();
@@ -430,13 +453,14 @@ class ApiIngestionController extends Controller
             return $this->prepareResult(false, [$errors], $error['errors'], "Error in updating entry");
         }
         else {
-            $entry = Entry::whereId($id)->update(array(
-              'element'=>json_encode($json_element),
-              'notes'=>$formData->notes
-              )
-            );
-            $json_element['notes'] = $formData->notes;
-            return $this->prepareResult(true, $json_element, $error['errors'], "Entry updated successfully");
+          $entry = Entry::find($id);
+          $entry->element = json_encode($json_element);
+          $entry->notes = $formData->notes;
+          $entry->save();
+
+          $json_element['notes'] = $formData->notes;
+          $error['files']=$imgs_errors;
+          return $this->prepareResult(true, $json_element, $error, "Entry updated successfully");
         }
       }
 

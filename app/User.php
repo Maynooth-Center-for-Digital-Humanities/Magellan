@@ -25,6 +25,13 @@ class User extends Authenticatable
         static::created(function($user) {
             $user->afterSave($user);
         });
+
+        static::deleting(function($user) {
+          $user->roles()->sync([]);
+          $user->transcriptions()->sync([]);
+          $user->entryLock()->sync([]);
+          $user->rights()->sync([]);          
+        });
     }
 
     /**

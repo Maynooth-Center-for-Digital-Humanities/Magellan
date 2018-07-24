@@ -53,6 +53,9 @@ Route::get('/genders/','ApiIngestionController@genders');
 Route::get('/languages/','ApiIngestionController@languages');
 Route::get('/date_created/','ApiIngestionController@date_created');
 
+// test API calls
+Route::get('/test-api/','ApiIngestionController@testAPI');
+
 // mailchimp
 Route::post('/subscribe-to-newsletter/','UserController@subscribeToMailchimp');
 
@@ -111,5 +114,18 @@ Route::group(['middleware' => ['admin','auth:api']], function(){
 
   Route::post('/update-letter-transcription-status/{id}','AdminController@updateTranscriptionStatus');
   Route::post('/update-letter-transcription-page-status/{id}','AdminController@updateTranscriptionPageStatus');
+
+  // users
+  Route::get('/admin/users/','UserController@listUsers');
+  Route::get('/admin/user/{id}','UserController@getUser');
+  Route::get('/admin/user-roles/{id}','UserController@getUserRoles');
+  Route::get('/admin/available-user-roles/','UserController@loadAvailableUserRolesAdmin');
+  Route::get('/admin/available-user-role/{id}','UserController@loadAvailableUserRoleAdmin');
+
+  Route::post('/admin/user/{id}','UserController@updateUser');
+  Route::post('/admin/available-user-role/{id}','UserController@updateAvailableUserRoleAdmin');
+
+  Route::delete('/admin/user/{id}','UserController@deleteUser');
+  Route::delete('/admin/available-user-role/{id}','UserController@deleteAvailableUserRoleAdmin');
 
 });

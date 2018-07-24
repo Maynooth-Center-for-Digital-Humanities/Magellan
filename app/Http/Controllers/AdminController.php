@@ -19,8 +19,12 @@ class AdminController extends Controller
    * @return Entries
    */
   public function listTranscriptions(Request $request) {
+    $sort = "asc";
     $paginate = 10;
     $page = 1;
+    if ($request->input('sort') !== null && $request->input('sort') !== "") {
+        $sort = $request->input('sort');
+    }
     if ($request->input('paginate') !== null && $request->input('paginate') !== "") {
         $paginate = $request->input('paginate');
     }
@@ -30,7 +34,9 @@ class AdminController extends Controller
     $transcriptions_data = Entry::where([
       ['status','=', 0],
       ['transcription_status','<=', 0],
-      ])->get();
+      ])
+      ->orderBy('created_at', $sort)
+      ->get();
     $count = count($transcriptions_data);
 
     $paginator = new Paginator($transcriptions_data, $count, $paginate, $page, [

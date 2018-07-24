@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Entry;
+use App\Role;
+use App\User;
 use App\Helpers\PrepareOutputTrait;
 use Illuminate\Pagination\LengthAwarePaginator as Paginator;
 
@@ -140,7 +142,9 @@ class UserController extends Controller
       $user['email'] = "";
       $user['password'] = "";
       $user->save();
+      $user->roles()->sync([]);
       $user->transcriptions()->sync([]);
+      $user->entryLock()->sync([]);
       $user->rights()->sync([]);
       $response = array(
         "status"=>"success"
@@ -188,5 +192,261 @@ class UserController extends Controller
       return $this->prepareResult(true, array("status"=>"success", "email"=>$email), [], json_decode($response));
     }
 
+  }
+
+  public function listUsers(Request $request) {
+    $term = "";
+    $type = "Name";
+    $sort = "asc";
+    $paginate = 10;
+    $status = null;
+    $group = 0;
+    if ($request->input('sort')!=="") {
+      $sort = $request->input('sort');
+    }
+    if ($request->input('paginate')!=="") {
+      $paginate = $request->input('paginate');
+    }
+    if ($request->input('status')!=="") {
+      $status = $request->input('status');
+    }
+    if ($request->input('term')!=="") {
+      $term = strtolower($request->input('term'));
+    }
+    if ($request->input('type')!=="") {
+      $type = $request->input('type');
+    }
+    if ($request->input('group')!=="") {
+      $group = $request->input('group');
+    }
+    if (strlen($term)<2) {
+      if ($group==0) {
+        $users = User::orderBy('name', $sort)->paginate($paginate);
+      }
+      else if ($group>0) {
+        $role_users = array();
+        $role = Role::find($group);
+        foreach($role->users as $role_user) {
+          $role_users[]=$role_user->id;
+        }
+        $users = User::whereIn('id', $role_users)->orderBy('name', $sort)->paginate($paginate);
+      }
+    }
+    else {
+      if ($group==0) {
+        if ($type==="Name") {
+          $users = User::where('name','like','%'.$term.'%')->orderBy('name', $sort)->paginate($paginate);
+        }
+        else if ($type==="Email") {
+          $users = User::where('email','like','%'.$term.'%')->orderBy('name', $sort)->paginate($paginate);
+        }
+      }
+      else {
+        $role_users = array();
+        $role = Role::find($group);
+        foreach($role->users as $role_user) {
+          $role_users[]=$role_user->id;
+        }
+        if ($type==="Name") {
+          $users = User::where('name','like','%'.$term.'%')->whereIn('id', $role_users)->orderBy('name', $sort)->paginate($paginate);
+        }
+        else if ($type==="Email") {
+          $users = User::where('email','like','%'.$term.'%')->whereIn('id', $role_users)->orderBy('name', $sort)->paginate($paginate);
+        }
+      }
+    }
+    return $this->prepareResult(true, $users, [], "All users");
+  }
+
+  public function getUser(Request $request, $id) {
+    if (User::where('id',$id)->first()!==null) {
+      $user = User::where('id',$id)->first();
+      $user['roles'] = User::where('id',$id)->first()->roles;
+      return $this->prepareResult(true, $user, [], []);
+    }
+    else {
+      return $this->prepareResult(false, [], "There is no user that matches this id.", []);
+    }
+  }
+
+  public function updateUser(Request $request, $id) {
+    $email = "";
+    $name = "";
+    $status = 0;
+    $role = 0;
+
+    if ($request->input('email')!=='') {
+      $email = trim($request->input('email'));
+    }
+    if ($request->input('name')!=='') {
+      $name = trim($request->input('name'));
+    }
+    if ($request->input('status')!=='') {
+      $status = intval($request->input('status'));
+    }
+    if ($request->input('role')!=='') {
+      $role = intval($request->input('role'));
+    }
+    if ($email==="") {
+      return $this->prepareResult(false, [], "Please provide a valid email address", []);
+    }
+    if ($name==="") {
+      return $this->prepareResult(false, [], "Please provide a user name", []);
+    }
+    if (intval($id)===0) {
+      $user = new User();
+      $user->email = $email;
+      $user->name = $name;
+      $user->status = $status;
+      $user->save();
+      $user->roles()->sync($role);
+
+      return $this->prepareResult(true, $user, [], "User created");
+    }
+    else if (intval($id)>0){
+      // check if auth user has the right to update this user
+      $auth_user = Auth::user();
+      $isAdmin = $auth_user->isAdmin();
+      if (intval($auth_user->id)!==intval($id)){
+        if (!$isAdmin) {
+           return $this->prepareResult(false, [], "You do not have permissions to update this user account", []);
+        }
+      }
+      if (User::where('id',$id)->first()!==null) {
+        $user = User::where('id',$id)->first();
+        $user->email = $email;
+        $user->name = $name;
+        $user->status = $status;
+        $user->save();
+        // update role
+        $user->roles()->sync($role);
+        return $this->prepareResult(true, $user, [], "User updated successfully");
+      }
+    }
+  }
+
+  public function deleteUser(Request $request, $id) {
+    if (intval($id)>0) {
+      $auth_user = Auth::user();
+      $isAdmin = $auth_user->isAdmin();
+      if (intval($auth_user->id)!==intval($id)){
+        if (!$isAdmin) {
+           return $this->prepareResult(false, [], "You do not have permissions to delete this user account", []);
+        }
+      }
+      $user = User::find($id);
+      if ($user!==null) {
+        if (!$user->isAdmin()) {
+          $user->delete();
+          return $this->prepareResult(true, [], [], "User deleted successfully");
+        }
+        else {
+          return $this->prepareResult(false, [], "You cannot delete an administrator. To delete this user you must first remove the administrator role.", "");
+        }
+      }
+      else {
+        return $this->prepareResult(false, [], "A user with id: ".$id." cannot be found.", "");
+      }
+    }
+  }
+
+  public function getUserRoles(Request $request, $id) {
+    if (User::where('id',$id)->first()!==null) {
+      $userRoles = User::where('id',$id)->first()->roles;
+      return $this->prepareResult(true, $userRoles, [], []);
+    }
+    else {
+      return $this->prepareResult(false, [], "There is no user that matches this id.", []);
+    }
+  }
+
+  public function loadAvailableUserRolesAdmin(Request $request) {
+    $availableRoles = Role::orderBy('default','asc')->get();
+    return $this->prepareResult(true, $availableRoles, [], "All available user roles");
+  }
+
+  public function loadAvailableUserRoleAdmin(Request $request, $id) {
+    $availableRole = Role::find($id);
+    return $this->prepareResult(true, $availableRole, [], "All available user roles");
+  }
+
+  public function updateAvailableUserRoleAdmin(Request $request, $id) {
+    if (intval($id)>0) {
+      $availableRole = Role::find($id);
+      if ($availableRole!==null) {
+        $name = '';
+        $description = '';
+        $default = 0;
+
+        if ($request->input('name')!=='') {
+          $name = trim($request->input('name'));
+        }
+        if ($request->input('description')!=='') {
+          $description = trim($request->input('description'));
+        }
+        if ($request->input('default')!=='') {
+          $default = intval($request->input('default'));
+        }
+
+        if ($default>0) {
+          Role::where('default','=',1)->update(['default'=>0]);
+        }
+        $availableRole->name = $name;
+        $availableRole->description = $description;
+        $availableRole->default = intval($default);
+        $availableRole->save();
+        return $this->prepareResult(true, $availableRole, [], "User group updated successfully");
+      }
+      else {
+        return $this->prepareResult(false, [], "No user group matches the provided id.", "");
+      }
+    }
+    else if (intval($id)===0) {
+      $name = '';
+      $description = '';
+      $default = 0;
+
+      if ($request->input('name')!=='') {
+        $name = trim($request->input('name'));
+      }
+      if ($request->input('description')!=='') {
+        $description = trim($request->input('description'));
+      }
+      if ($request->input('default')!=='') {
+        $default = intval($request->input('default'));
+      }
+
+      if ($default>0) {
+        Role::where('default','=',1)->update(['default'=>0]);
+      }
+      $availableRole = new Role();
+
+      $availableRole->name = $name;
+      $availableRole->description = $description;
+      $availableRole->default = intval($default);
+      $availableRole->save();
+      return $this->prepareResult(true, $availableRole, [], "User group created successfully");
+
+    }
+
+  }
+
+  public function deleteAvailableUserRoleAdmin(Request $request, $id) {
+    if (intval($id)>0) {
+      $availableRole = Role::find($id);
+      if ($availableRole!==null) {
+        if (count($availableRole->users)===0) {
+          $availableRole->delete();
+          return $this->prepareResult(true, $availableRole, [], "User role deleted successfully");
+        }
+        else {
+          return $this->prepareResult(false, $availableRole, "This user role is associated with user accounts and cannot be deleted.", []);
+        }
+
+      }
+      else {
+        return $this->prepareResult(false, [], "No user group matches the provided id.", "");
+      }
+    }
   }
 }

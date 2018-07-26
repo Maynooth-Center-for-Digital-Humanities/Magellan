@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Entry;
+use App\Uploadedfile;
 use App\Role;
 use App\User;
 use App\Helpers\PrepareOutputTrait;

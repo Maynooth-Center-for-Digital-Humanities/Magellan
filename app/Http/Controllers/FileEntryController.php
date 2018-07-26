@@ -174,7 +174,7 @@ class FileEntryController extends Controller
 
     public function isImage($file) {
       $allowed_extensions = array("jpg", "jpeg", "gif", "png");
-      if (in_array($file->getClientOriginalExtension(), $allowed_extensions)) {
+      if (in_array(strtolower($file->getClientOriginalExtension()), $allowed_extensions)) {
         return true;
       }
       return false;

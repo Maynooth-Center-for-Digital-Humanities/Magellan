@@ -49,10 +49,12 @@ class EntryFormat implements EntryFormatInterface
         'recipient_location'=>'max:255',
         'request_time'=>'date|required|date_format:Y-m-d\TH:i:sP',
         'source'=>'required|max:255',
+        'status'=>'required|integer',
         'terms_of_use'=>'required|max:1',
         'time_zone'=>'required|max:255',
         'topics.*.topic_id'=>'required|integer',
         'topics.*.topic_name'=>'required|max:255',
+        'transcription_status'=>'required|integer',
         'type'=>'required|max:255',
         'user_id'=>'required|max:15',
         'year_of_death_of_author'=>'max:4'

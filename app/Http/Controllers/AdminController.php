@@ -36,13 +36,9 @@ class AdminController extends Controller
       ['transcription_status','<=', 0],
       ])
       ->orderBy('created_at', $sort)
-      ->get();
+      ->paginate($paginate);
     $count = count($transcriptions_data);
-
-    $paginator = new Paginator($transcriptions_data, $count, $paginate, $page, [
-      'path'  => Paginator::resolveCurrentPath()
-    ]);
-    return $this->prepareResult(true, $paginator, [], "All users transcriptions");
+    return $this->prepareResult(true, $transcriptions_data, [], "All users transcriptions");
   }
 
   public function Unauthorized(Request $request) {

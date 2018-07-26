@@ -83,14 +83,22 @@ class UserController extends Controller
   }
 
   public function userLetter(Request $request, $id) {
-    $entry = Entry::where([
-      ['id', $id],
-      ['user_id','=',Auth::user()->id],
-    ])->first();
+    $user = Auth::user();
+    if (!$user->isAdmin()) {
+      $entry = Entry::where([
+        ['id', $id],
+        ['user_id','=',Auth::user()->id],
+      ])->first();
 
-    $msg = "Entry found";
-    $status = true;
+      $msg = "Entry found";
+      $status = true;
+    }
+    else {
+      $entry = Entry::find($id)->first();
 
+      $msg = "Entry found";
+      $status = true;
+    }
     if ($entry != null) {
       $coll = json_decode($entry->element, true);
       $coll['notes'] = $entry->notes;

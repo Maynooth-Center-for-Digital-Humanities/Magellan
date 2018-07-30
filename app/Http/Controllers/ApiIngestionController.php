@@ -245,6 +245,7 @@ class ApiIngestionController extends Controller
       else {
         $letter_to = $formData->letter_to;
       }
+
       $imgs_errors = array();
       if (intval($id)===0) {
         // pages
@@ -307,6 +308,7 @@ class ApiIngestionController extends Controller
         	"source"=> $source,
           "topics"=> $topics,
           "creator"=> $letter_from,
+          "creator_location"=>$formData->creator_location,
           "user_id"=> Auth::user()->id,
           "language" => $formData->language,
           "recipient" => $letter_to,
@@ -320,7 +322,6 @@ class ApiIngestionController extends Controller
           "request_time"=>$now,
           "terms_of_use"=>$formData->terms_of_use,
           "collection_id"=>"",
-          "sent_location"=>$formData->creator_location,
           "doc_collection"=>$formData->doc_collection,
           "modified_timestamp"=>$now,
           "recipient_location"=>$formData->recipient_location,
@@ -421,6 +422,7 @@ class ApiIngestionController extends Controller
         	"source"=> $source,
           "topics"=> $topics,
           "creator"=> $letter_from,
+          "creator_location"=>$formData->creator_location,
           "user_id"=> Auth::user()->id,
           "language" => $formData->language,
           "recipient" => $letter_to,
@@ -434,7 +436,6 @@ class ApiIngestionController extends Controller
           "request_time"=>$now,
           "terms_of_use"=>$formData->terms_of_use,
           "collection_id"=>"",
-          "sent_location"=>$formData->creator_location,
           "doc_collection"=>$formData->doc_collection,
           "modified_timestamp"=>$now,
           "recipient_location"=>$formData->recipient_location,

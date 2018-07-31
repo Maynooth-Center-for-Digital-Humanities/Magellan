@@ -183,13 +183,10 @@ class ApiIngestionController extends Controller
     }
 
     public function testAPI() {
-      $id = 1591;
-      $entry = new Entry();
-      $entry = Entry::whereId($id)->get();
-      $entry_pages = Pages::where('entry_id',$id)->get();
+      phpinfo();
 
 
-      return $this->prepareResult(true, $entry_pages, [], "All user pages");
+      //return $this->prepareResult(true, $entry_pages, [], "All user pages");
     }
 
     public function uploadLetter(Request $request,$id) {

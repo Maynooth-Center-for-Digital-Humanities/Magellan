@@ -229,12 +229,12 @@ class UserController extends Controller
       $group = $request->input('group');
     }
     if (strlen($term)<2) {
-      if ($group==0) {
+      if ($group===0) {
         $users = User::orderBy('name', $sort)->paginate($paginate);
       }
       else if ($group>0) {
         $role_users = array();
-        $role = Role::find($group);
+        $role = Role::where('id',$group);
         foreach($role->users as $role_user) {
           $role_users[]=$role_user->id;
         }
@@ -252,7 +252,7 @@ class UserController extends Controller
       }
       else {
         $role_users = array();
-        $role = Role::find($group);
+        $role = Role::where('id', $group);
         foreach($role->users as $role_user) {
           $role_users[]=$role_user->id;
         }
@@ -343,7 +343,7 @@ class UserController extends Controller
            return $this->prepareResult(false, [], "You do not have permissions to delete this user account", []);
         }
       }
-      $user = User::find($id);
+      $user = User::where('id',$id);
       if ($user!==null) {
         if (!$user->isAdmin()) {
           $user->delete();
@@ -375,13 +375,13 @@ class UserController extends Controller
   }
 
   public function loadAvailableUserRoleAdmin(Request $request, $id) {
-    $availableRole = Role::find($id);
+    $availableRole = Role::where('id',$id);
     return $this->prepareResult(true, $availableRole, [], "All available user roles");
   }
 
   public function updateAvailableUserRoleAdmin(Request $request, $id) {
     if (intval($id)>0) {
-      $availableRole = Role::find($id);
+      $availableRole = Role::where('id',$id);
       if ($availableRole!==null) {
         $name = '';
         $description = '';
@@ -442,7 +442,7 @@ class UserController extends Controller
 
   public function deleteAvailableUserRoleAdmin(Request $request, $id) {
     if (intval($id)>0) {
-      $availableRole = Role::find($id);
+      $availableRole = Role::where('id',$id);
       if ($availableRole!==null) {
         if (count($availableRole->users)===0) {
           $availableRole->delete();

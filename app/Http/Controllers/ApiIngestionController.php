@@ -454,7 +454,7 @@ class ApiIngestionController extends Controller
             return $this->prepareResult(false, [$errors], $error['errors'], "Error in updating entry");
         }
         else {
-          $entry = Entry::find($id);
+          $entry = Entry::where('id',$id);
           $entry->element = json_encode($json_element);
           $entry->notes = $formData->notes;
           $entry->save();

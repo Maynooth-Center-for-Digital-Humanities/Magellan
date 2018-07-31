@@ -95,7 +95,7 @@ class UserController extends Controller
       $status = true;
     }
     else {
-      $entry = Entry::find($id)->first();
+      $entry = Entry::where('id',$id)->first();
 
       $msg = "Entry found";
       $status = true;

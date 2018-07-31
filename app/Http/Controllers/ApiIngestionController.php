@@ -567,6 +567,7 @@ class ApiIngestionController extends Controller
       Storage::disk('thumbnails')->delete($archive_filename);
       $element['pages'] = $newPages;
       Entry::whereId($id)->update(['element'=>json_encode($element)]);
+      Uploadedfile::where("filename",$archive_filename)->delete();
 
       return $this->prepareResult(true, $newPages, $error, "Page deleted successfully");
     }

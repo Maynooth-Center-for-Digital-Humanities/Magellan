@@ -183,7 +183,7 @@ class ApiIngestionController extends Controller
     }
 
     public function testAPI() {
-      phpinfo();
+      //phpinfo();
 
 
       //return $this->prepareResult(true, $entry_pages, [], "All user pages");

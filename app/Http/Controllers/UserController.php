@@ -226,8 +226,9 @@ class UserController extends Controller
       $type = $request->input('type');
     }
     if ($request->input('group')!=="") {
-      $group = $request->input('group');
+      $group = intval($request->input('group'));
     }
+    $users = array();
     if (strlen($term)<2) {
       if ($group===0) {
         $users = User::orderBy('name', $sort)->paginate($paginate);
@@ -242,7 +243,7 @@ class UserController extends Controller
       }
     }
     else {
-      if ($group==0) {
+      if ($group===0) {
         if ($type==="Name") {
           $users = User::where('name','like','%'.$term.'%')->orderBy('name', $sort)->paginate($paginate);
         }

@@ -33,47 +33,50 @@ class FileEntryController extends Controller
     public function add(Request $request) {
       $files = $request->file('data');
       $format = $request->input('format');
-
+      $document_id = 0;
+      $entry = [];
       if ($request->hasFile('data') && $format!=="") {
         foreach ($files as $file) {
+          $entry_format = EntryFormatFactory::create($format);
 
-            $entry_format = EntryFormatFactory::create($format);
+          $extension=$file->getClientOriginalExtension();
+          Storage::disk('local')->put($file->getFilename().'.'.$extension,  File::get($file));
 
-            $extension=$file->getClientOriginalExtension();
-            Storage::disk('local')->put($file->getFilename().'.'.$extension,  File::get($file));
+          if($entry_format->valid($file)){
 
-            if($entry_format->valid($file)){
+              // Store the file
+              $saved_file = $this->store($file,$format,Auth::user()->id);
 
-                // Store the file
-                $saved_file = $this->store($file,$format,Auth::user()->id);
-                $entry = new Entry();
-                $entry->element = $entry_format->getJsonData();
+              $decode = json_decode($entry_format->getJsonData(),true);
+              $document_id = $decode['document_id'];
+              $entryPages = $decode['pages'];
 
-                $decode = json_decode($entry_format->getJsonData(),true);
-                $document_id = $decode['document_id'];
-                $entryPages = $decode['pages'];
-                $entry->status = $this->getEntryStatus($entryPages);
-                $entry->user_id = Auth::user()->id;
-                $entry->current_version = 1;
-                $entry->uploadedfile_id = $saved_file->id;
+              $entry = new Entry();
+              $entry->element = $entry_format->getJsonData();
+              $entry->user_id = Auth::user()->id;
+              $entry->current_version = TRUE;
+              $entry->status = $this->getEntryStatus($entryPages);
+              $entry->transcription_status = 2;
+              $entry->notes = "";
+              $entry->uploadedfile_id = $saved_file->id;
 
-                // if there are other entries with the same document id set their current_version to zero
-                $other_versions = DB::table('entry')
-                  ->join('uploadedfile', 'entry.uploadedfile_id','=','uploadedfile.id')
-                  ->select('entry.id')
-                  ->where('uploadedfile.original_filename',$document_id.".xml")
-                  ->where('entry.current_version','1')->get();
+              // if there are other entries with the same document id set their current_version to zero
+              $other_versions = DB::table('entry')
+                ->join('uploadedfile', 'entry.uploadedfile_id','=','uploadedfile.id')
+                ->select('entry.id')
+                ->where('uploadedfile.original_filename',$document_id.".xml")
+                ->where('entry.current_version','1')->get();
 
-                foreach($other_versions as $instance) {
-                  DB::table('entry')
-                  ->where('id', $instance->id)
-                  ->update(['current_version' => 0]);
-                }
+              foreach($other_versions as $instance) {
+                DB::table('entry')
+                ->where('id', $instance->id)
+                ->update(['current_version' => 0]);
+              }
 
-                // save entry
-                $entry->save();
+              // save entry
+              $entry->save();
 
-            };
+          };
         }
         if (count($files)===1) {
           $response = array("document_id"=>$document_id);

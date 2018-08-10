@@ -102,6 +102,8 @@ class UserController extends Controller
     }
     if ($entry != null) {
       $coll = json_decode($entry->element, true);
+      $copyright_statement = strip_tags($coll['copyright_statement']);
+      $coll['copyright_statement'] = $copyright_statement;
       $coll['notes'] = $entry->notes;
       $file_id = $entry->uploadedfile_id;
       if ($file_id!==null) {
@@ -344,7 +346,7 @@ class UserController extends Controller
            return $this->prepareResult(false, [], "You do not have permissions to delete this user account", []);
         }
       }
-      $user = User::where('id',$id);
+      $user = User::where('id',$id)->first();
       if ($user!==null) {
         if (!$user->isAdmin()) {
           $user->delete();

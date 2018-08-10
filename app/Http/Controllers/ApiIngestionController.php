@@ -155,28 +155,55 @@ class ApiIngestionController extends Controller
     public function store(Request $request)
     {
         $error = false;
-        $format = json_decode($request->getContent())->type;
+        $format = $request->input('format');
+        $data = $request->input('data');
+
         $entry_format = EntryFormats\Factory::create($format);
-        $validator = $entry_format->valid($request->all());
+        $data_json = json_decode($data,true);
+
+        $validator = $entry_format->valid($data_json);
 
         if ($validator->fails()) {
 
             $error = true;
-            $errors = $validator->errors();
+            $errors['document_id'] = $data_json['document_id'];
+            $errors['errors'] = $validator->errors();
 
-            return $this->prepareResult(false, [], $error['errors'], "Error in creating entry");
+
+            return $this->prepareResult(false, $errors, $error['errors'], "Error in creating entry");
 
         } else {
+            $document_id = $data_json['document_id'];
+            $entryPages = $data_json['pages'];
+            $transcription_status = $data_json['transcription_status'];
 
-            $entry = new Entry();
-            $entry->element = $request->getContent();
-            $entry->user_id = Auth::user()->id;
+            $document_id_str = strval($document_id);
+            // check if the entry already exists in the db
+            $existing_entry = Entry::where('element->document_id', $document_id_str)->first();
+            $existing_element = json_decode($existing_entry['element'], true);
+            $existing_modified_timestamp = $existing_element['modified_timestamp'];
 
-            Entry::where('current_version', TRUE)->where('element->document_id', $request->document_id)->update(array('current_version'=>FALSE));
-            $entry->current_version = TRUE;
-            $entry->save();
+            if ($existing_entry!==null && $existing_modified_timestamp===$data_json['modified_timestamp']) {
+              return $this->prepareResult(true, [], $error['errors'], "Entry already inserted");
+            }
+            else {
+              $current_version = 1;
 
-            return $this->prepareResult(true, $entry, $error['errors'], "Entry created");
+              if ($existing_entry!==null && $existing_entry->current_version===1) {
+                $current_version = 0;
+              }
+              $entry = new Entry();
+              $entry->element = json_encode($data_json);
+              $entry->user_id = Auth::user()->id;
+              $entry->current_version = $current_version;
+              $entry->status = $this->getEntryStatus($entryPages);
+              $entry->transcription_status = $transcription_status;
+              $entry->notes = "";
+
+              $entry->save();
+
+              return $this->prepareResult(true, [], $error['errors'], "Entry created");
+            }
 
         }
 
@@ -301,10 +328,10 @@ class ApiIngestionController extends Controller
   	      "debug"=>"",
   	      "pages"=> $newPages,
           "title"=> $formData->title,
-        	"gender"=> $formData->gender,
         	"source"=> $source,
           "topics"=> $topics,
           "creator"=> $letter_from,
+        	"creator_gender"=> $formData->creator_gender,
           "creator_location"=>$formData->creator_location,
           "user_id"=> Auth::user()->id,
           "language" => $formData->language,
@@ -409,16 +436,19 @@ class ApiIngestionController extends Controller
           $count++;
         }
 
+        $entry = Entry::where('id',$id)->first();
+        $decode = json_decode($entry->element, true);
+        $entry_type = $decode['type'];
         // element
         $json_element = array(
-          "type"=>"uploader",
+          "type"=>$entry_type,
   	      "debug"=>"",
   	      "pages"=> $newPages,
           "title"=> $formData->title,
-        	"gender"=> $formData->gender,
         	"source"=> $source,
           "topics"=> $topics,
           "creator"=> $letter_from,
+        	"creator_gender"=> $formData->creator_gender,
           "creator_location"=>$formData->creator_location,
           "user_id"=> Auth::user()->id,
           "language" => $formData->language,
@@ -451,7 +481,7 @@ class ApiIngestionController extends Controller
             return $this->prepareResult(false, [$errors], $error['errors'], "Error in updating entry");
         }
         else {
-          $entry = Entry::where('id',$id)->first();
+
           $entry->element = json_encode($json_element);
           $entry->notes = $formData->notes;
           $entry->save();

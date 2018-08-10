@@ -98,10 +98,9 @@
         <xsl:text>"collection_id": "",</xsl:text>
         <xsl:text>"copyright_statement": "",</xsl:text>
         <xsl:text>"creator": "</xsl:text> <xsl:value-of select="TEI:TEI/TEI:teiHeader/TEI:profileDesc/TEI:correspDesc/TEI:correspAction[@type='sent']/TEI:persName" /><xsl:text>",</xsl:text>
-        <xsl:text>"gender": "</xsl:text> <xsl:value-of select="TEI:TEI/TEI:teiHeader/TEI:profileDesc/TEI:textClass/TEI:keywords/TEI:list/TEI:item[@n='gender']" /><xsl:text>",</xsl:text>
-        <xsl:text>"sent_location": "</xsl:text> <xsl:value-of select="TEI:TEI/TEI:teiHeader/TEI:profileDesc/TEI:correspDesc/TEI:correspAction[@type='sent']/TEI:placeName" /><xsl:text>",</xsl:text>
+        <xsl:text>"creator_gender": "</xsl:text> <xsl:value-of select="TEI:TEI/TEI:teiHeader/TEI:profileDesc/TEI:textClass/TEI:keywords/TEI:list/TEI:item[@n='gender']" /><xsl:text>",</xsl:text>
+        <xsl:text>"creator_location": "</xsl:text> <xsl:value-of select="TEI:TEI/TEI:teiHeader/TEI:profileDesc/TEI:correspDesc/TEI:correspAction[@type='sent']/TEI:placeName" /><xsl:text>",</xsl:text>
         <xsl:text>"date_created": "</xsl:text><xsl:value-of select="TEI:TEI/TEI:teiHeader/TEI:profileDesc/TEI:correspDesc/TEI:correspAction[@type='sent']/TEI:date/@when" /><xsl:text>",</xsl:text>
-        <xsl:text>"debug": "",</xsl:text>
         <xsl:text>"description": "</xsl:text><xsl:value-of select="TEI:TEI/TEI:teiHeader/TEI:fileDesc/TEI:notesStmt/TEI:note" /><xsl:text>",</xsl:text>
         <xsl:text>"doc_collection": "</xsl:text><xsl:value-of select="normalize-space(TEI:TEI/TEI:teiHeader/TEI:fileDesc/TEI:sourceDesc/TEI:msDesc/TEI:msIdentifier/TEI:collection)" /><xsl:copy-of select="$collection_idno" />"<xsl:text>,</xsl:text>
         <xsl:text>"language": "</xsl:text><xsl:value-of select="TEI:TEI/TEI:teiHeader/TEI:profileDesc/TEI:langUsage/TEI:language" /><xsl:text>",</xsl:text>
@@ -151,6 +150,7 @@
         <xsl:text>"recipient_location": "</xsl:text><xsl:value-of select="TEI:TEI/TEI:teiHeader/TEI:profileDesc/TEI:correspDesc/TEI:correspAction[@type='received']/TEI:placeName" /><xsl:text>",</xsl:text>
         <xsl:text>"request_time": "",</xsl:text>
         <xsl:text>"source": "</xsl:text><xsl:value-of select="TEI:TEI/TEI:teiHeader/TEI:fileDesc/TEI:sourceDesc/TEI:msDesc/TEI:msIdentifier/TEI:repository"/><xsl:text>",</xsl:text>
+        <xsl:text>"status": "1",</xsl:text>
         <xsl:text>"terms_of_use": "",</xsl:text>
         <xsl:text>"time_zone": "Europe/Dublin",</xsl:text>
         <xsl:text>"title": "</xsl:text><xsl:value-of select="TEI:TEI/TEI:teiHeader/TEI:fileDesc/TEI:titleStmt/TEI:title" /><xsl:text>",</xsl:text>
@@ -172,7 +172,7 @@
             <xsl:text>],</xsl:text>
         </xsl:if>
         <!-- topics -->
-
+        <xsl:text>"transcription_status": "2",</xsl:text>
         <xsl:text>"type": "xml_tei_letter19xx",</xsl:text>
         <xsl:text>"user_id": "",</xsl:text>
         <xsl:text>"year_of_death_of_author": ""</xsl:text>

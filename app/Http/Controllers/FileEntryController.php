@@ -87,19 +87,12 @@ class FileEntryController extends Controller
               // save entry
               $entry->save();
 
+              $response = array("document_id"=>$document_id);
+              return $this->prepareResult(200, $response, [], "File Uploaded Successfully");
+
           }
         }
-        if (count($files)===1) {
-          $response = array("document_id"=>$document_id);
-          return $this->prepareResult(200, $response, [], "File Uploaded Successfully");
-
-          //new Response::json([""]"Files Uploaded Successfully", 200);
-        }
-        else {
-          return new Response("Files Uploaded Successfully", 200);
-        }
-
-
+        return new Response("Files Uploaded Successfully", 200);
       }
 
     }

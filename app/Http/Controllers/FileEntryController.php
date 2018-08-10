@@ -42,7 +42,18 @@ class FileEntryController extends Controller
           $extension=$file->getClientOriginalExtension();
           Storage::disk('local')->put($file->getFilename().'.'.$extension,  File::get($file));
 
-          if($entry_format->valid($file)){
+          $validator = $entry_format->valid($file);
+          if ($validator->fails()) {
+            $decode = json_decode($entry_format->getJsonData(),true);
+            $document_id = $decode['document_id'];
+
+            $error = true;
+            $errors['document_id'] = $data_json['document_id'];
+            $errors['errors'] = $validator->errors();
+
+            return $this->prepareResult(false, $errors, $error['errors'], "Error in creating entry");
+          }
+          else {
 
               // Store the file
               $saved_file = $this->store($file,$format,Auth::user()->id);
@@ -76,7 +87,7 @@ class FileEntryController extends Controller
               // save entry
               $entry->save();
 
-          };
+          }
         }
         if (count($files)===1) {
           $response = array("document_id"=>$document_id);

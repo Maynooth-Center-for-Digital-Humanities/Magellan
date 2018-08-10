@@ -35,7 +35,6 @@ class FileEntryController extends Controller
       $format = $request->input('format');
       $document_id = 0;
       $entry = [];
-      return $this->prepareResult(false, $files, $format, "Error in creating entry");
       if ($request->hasFile('data') && $format!=="") {
         foreach ($files as $file) {
           $entry_format = EntryFormatFactory::create($format);
@@ -43,18 +42,7 @@ class FileEntryController extends Controller
           $extension=$file->getClientOriginalExtension();
           Storage::disk('local')->put($file->getFilename().'.'.$extension,  File::get($file));
 
-          $validator = $entry_format->valid($file);
-          if ($validator->fails()) {
-            $decode = json_decode($entry_format->getJsonData(),true);
-            $document_id = $decode['document_id'];
-
-            $error = true;
-            $errors['document_id'] = $data_json['document_id'];
-            $errors['errors'] = $validator->errors();
-
-            return $this->prepareResult(false, $errors, $error['errors'], "Error in creating entry");
-          }
-          else {
+          if($entry_format->valid($file)){
 
               // Store the file
               $saved_file = $this->store($file,$format,Auth::user()->id);
@@ -88,12 +76,22 @@ class FileEntryController extends Controller
               // save entry
               $entry->save();
 
-              $response = array("document_id"=>$document_id);
-              return $this->prepareResult(200, $response, [], "File Uploaded Successfully");
-
+          }
+          else {
+            return $this->prepareResult(200, $response, "File not valid", "");
           }
         }
-        return new Response("Files Uploaded Successfully", 200);
+        if (count($files)===1) {
+          $response = array("document_id"=>$document_id);
+          return $this->prepareResult(200, $response, [], "File Uploaded Successfully");
+
+          //new Response::json([""]"Files Uploaded Successfully", 200);
+        }
+        else {
+          return new Response("Files Uploaded Successfully", 200);
+        }
+
+
       }
 
     }

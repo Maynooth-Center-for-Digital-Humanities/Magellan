@@ -77,7 +77,7 @@
     <xsl:template match="/">
         <xsl:variable name="Quote">"</xsl:variable>
         <xsl:variable name="Apos">'</xsl:variable>
-        
+
         <xsl:variable name="id">
             <xsl:call-template name="string-replace-all">
                 <xsl:with-param name="text" select="TEI:TEI/TEI:teiHeader/@xml:id" />
@@ -85,10 +85,10 @@
                 <xsl:with-param name="by" select="''" />
             </xsl:call-template>
         </xsl:variable>
-        
+
         <xsl:variable name="collection_idno">
             <xsl:if test="TEI:TEI/TEI:teiHeader/TEI:fileDesc/TEI:sourceDesc/TEI:msDesc/TEI:msIdentifier/TEI:idno !=''">
-                <xsl:text>, </xsl:text><xsl:value-of select="normalize-space(TEI:TEI/TEI:teiHeader/TEI:fileDesc/TEI:sourceDesc/TEI:msDesc/TEI:msIdentifier/TEI:idno)" /> 
+                <xsl:text>, </xsl:text><xsl:value-of select="normalize-space(TEI:TEI/TEI:teiHeader/TEI:fileDesc/TEI:sourceDesc/TEI:msDesc/TEI:msIdentifier/TEI:idno)" />
             </xsl:if>
         </xsl:variable>
 
@@ -104,7 +104,7 @@
         <xsl:text>"description": "</xsl:text><xsl:value-of select="TEI:TEI/TEI:teiHeader/TEI:fileDesc/TEI:notesStmt/TEI:note" /><xsl:text>",</xsl:text>
         <xsl:text>"doc_collection": "</xsl:text><xsl:value-of select="normalize-space(TEI:TEI/TEI:teiHeader/TEI:fileDesc/TEI:sourceDesc/TEI:msDesc/TEI:msIdentifier/TEI:collection)" /><xsl:copy-of select="$collection_idno" />"<xsl:text>,</xsl:text>
         <xsl:text>"language": "</xsl:text><xsl:value-of select="TEI:TEI/TEI:teiHeader/TEI:profileDesc/TEI:langUsage/TEI:language" /><xsl:text>",</xsl:text>
-        <xsl:text>"document_id": "</xsl:text><xsl:value-of select="$id" /><xsl:text>",</xsl:text>
+        <xsl:text>"document_id": </xsl:text><xsl:value-of select="$id" /><xsl:text>,</xsl:text>
         <xsl:text>"modified_timestamp": "</xsl:text><xsl:value-of select="TEI:TEI/TEI:teiHeader/TEI:revisionDesc/TEI:change[last()]/@when" /><xsl:text>",</xsl:text>
         <xsl:text>"number_pages": "</xsl:text><xsl:value-of select="count(TEI:TEI/TEI:facsimile/TEI:graphic)" /><xsl:text>",</xsl:text>
 
@@ -126,13 +126,13 @@
             <xsl:text>"page_type": "</xsl:text><xsl:value-of select="/TEI:TEI/TEI:text/TEI:group/TEI:text[$pageindex]/@type" /><xsl:text>",</xsl:text>
             <xsl:text>"rev_id": "",</xsl:text>
             <xsl:text>"rev_name": "",</xsl:text>
-            <!-- transcription -->   
-            
+            <!-- transcription -->
+
             <xsl:text>"transcription": "</xsl:text>
             <xsl:apply-templates mode="copy"
                 select="/TEI:TEI/TEI:text/TEI:group/TEI:text[$pageindex]/*" />
             <xsl:text>",</xsl:text>
-            
+
             <xsl:text>"transcription_status": "2"</xsl:text>
             <!-- transcription -->
 

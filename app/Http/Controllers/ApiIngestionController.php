@@ -176,10 +176,9 @@ class ApiIngestionController extends Controller
             $document_id = $data_json['document_id'];
             $entryPages = $data_json['pages'];
             $transcription_status = $data_json['transcription_status'];
-
-            $document_id_str = strval($document_id);
+            
             // check if the entry already exists in the db
-            $existing_entry = Entry::where('element->document_id', $document_id_str)->first();
+            $existing_entry = Entry::where('element->document_id', $document_id)->first();
             $existing_element = json_decode($existing_entry['element'], true);
             $existing_modified_timestamp = $existing_element['modified_timestamp'];
 

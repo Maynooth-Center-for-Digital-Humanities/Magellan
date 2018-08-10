@@ -35,6 +35,7 @@ class FileEntryController extends Controller
       $format = $request->input('format');
       $document_id = 0;
       $entry = [];
+      return $this->prepareResult(false, $files, $format, "Error in creating entry");
       if ($request->hasFile('data') && $format!=="") {
         foreach ($files as $file) {
           $entry_format = EntryFormatFactory::create($format);

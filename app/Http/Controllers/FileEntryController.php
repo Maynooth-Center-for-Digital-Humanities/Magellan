@@ -41,7 +41,7 @@ class FileEntryController extends Controller
 
           $extension=$file->getClientOriginalExtension();
           Storage::disk('local')->put($file->getFilename().'.'.$extension,  File::get($file));
-
+          $entry_saved = false;
           if($entry_format->valid($file)){
 
               // Store the file

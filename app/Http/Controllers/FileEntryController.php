@@ -74,14 +74,14 @@ class FileEntryController extends Controller
               }
 
               // save entry
-              $entry->save();
+              $entry_saved = $entry->save();
 
           }
           else {
             return $this->prepareResult(200, $response, "File not valid", "");
           }
         }
-        if (count($files)===1) {
+        if (count($files)===1 && $entry_saved) {
           $response = array("document_id"=>$document_id);
           return $this->prepareResult(200, $response, [], "File Uploaded Successfully");
 

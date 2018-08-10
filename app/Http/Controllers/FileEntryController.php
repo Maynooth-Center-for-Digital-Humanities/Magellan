@@ -41,7 +41,6 @@ class FileEntryController extends Controller
 
           $extension=$file->getClientOriginalExtension();
           Storage::disk('local')->put($file->getFilename().'.'.$extension,  File::get($file));
-          $entry_saved = false;
           if($entry_format->valid($file)){
 
               // Store the file
@@ -81,9 +80,14 @@ class FileEntryController extends Controller
             return $this->prepareResult(200, $response, "File not valid", "");
           }
         }
-        if (count($files)===1 && $entry_saved) {
+        if (count($files)===1) {
           $response = array("document_id"=>$document_id);
-          return $this->prepareResult(200, $response, [], "File Uploaded Successfully");
+          if ($document_id>0) {
+            return $this->prepareResult(200, $response, [], "File Uploaded Successfully");
+          }
+          else {
+            return $this->prepareResult(false, $response, [], "Entry was not created");
+          }
 
           //new Response::json([""]"Files Uploaded Successfully", 200);
         }

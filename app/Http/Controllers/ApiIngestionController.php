@@ -173,10 +173,10 @@ class ApiIngestionController extends Controller
             return $this->prepareResult(false, $errors, $error['errors'], "Error in creating entry");
 
         } else {
-            $document_id = $data_json['document_id'];
+            $document_id = intval($data_json['document_id']);
             $entryPages = $data_json['pages'];
             $transcription_status = $data_json['transcription_status'];
-            
+
             // check if the entry already exists in the db
             $existing_entry = Entry::where('element->document_id', $document_id)->first();
             $existing_element = json_decode($existing_entry['element'], true);
@@ -209,10 +209,42 @@ class ApiIngestionController extends Controller
     }
 
     public function testAPI() {
-      //phpinfo();
 
+        $new_items = array();
+        $items = Entry::where([
+            ['current_version','=', 1],
+            ['status','=', 0],
+            ['transcription_status','=', 0],
+            ])
+            ->orderBy('id')
+            ->get();
+        foreach($items as $item) {
+          $element = json_decode($item->element, true);
+          $completed = 0;
+          $pages = $element['pages'];
+          foreach($pages as $page) {
+            $tstatus = $page['transcription_status'];
+            if ($tstatus>0) {
+              $completed++;
+            }
+          }
+          $percentage = 0;
+          if ($completed>0) {
+            $percentage = ($completed/count($pages))*100;
+          }
+          $item['completed']=$percentage;
+          $new_items[]=$item;
+        }
 
-      //return $this->prepareResult(true, $entry_pages, [], "All user pages");
+        $return_items = array();
+        foreach($new_items as $key=>$row) {
+          $return_items[$key]=$row['completed'];
+        }
+
+        array_multisort($return_items, SORT_ASC, $new_items);
+        $collection = collect($new_items);
+
+      return $this->prepareResult(true, $collection->forPage(1,10), [], "All user entries");
     }
 
     public function uploadLetter(Request $request,$id) {
@@ -977,6 +1009,276 @@ class ApiIngestionController extends Controller
       };
 
       return $this->prepareResult(true, $coll, [], "All user entries");
+    }
+
+
+    public function transcriptionsDeskfiltered(Request $request)
+    {
+      $sort = "asc";
+      $page = 1;
+      $paginate = 10;
+      $status = null;
+      $transcription_status = null;
+      $keywords_ids = array();
+      $sources = array();
+      $authors = array();
+      $genders = array();
+      $languages = array();
+      $date_start = null;
+      $date_end = null;
+
+      if ($request->input('sort')!=="") {
+        $sort = $request->input('sort');
+      }
+      if ($request->input('page')!=="") {
+        $page = $request->input('page');
+      }
+      if ($request->input('paginate')!=="") {
+        $paginate = $request->input('paginate');
+      }
+      if ($request->input('status')!=="") {
+        $status = $request->input('status');
+      }
+      if ($request->input('transcription_status')!=="") {
+        $transcription_status = $request->input('transcription_status');
+      }
+      if ($request->input('keywords')) {
+        $keywords_ids = $request->input('keywords');
+      }
+      if ($request->input('sources')) {
+        $sources = $request->input('sources');
+      }
+      if ($request->input('authors')) {
+        $authors = $request->input('authors');
+      }
+      if ($request->input('genders')) {
+        $genders = $request->input('genders');
+      }
+      if ($request->input('languages')) {
+        $languages = $request->input('languages');
+      }
+      if ($request->input('date_start')) {
+        $date_start = $request->input('date_start');
+      }
+      if ($request->input('date_end')) {
+        $date_end = $request->input('date_end');
+      }
+
+      if ($status===null || $transcription_status===null) {
+        return $this->prepareResult(true, [], [], "Please set the status and transcription status.");
+      }
+
+      $entry_ids = array();
+      // keywords
+      if (count($keywords_ids)>0) {
+        $keywords_ids_num = count($keywords_ids);
+        $keywords_entry_ids = EntryTopic::select('entry_id', DB::raw('COUNT(entry_id) as c'))
+        ->whereIn('topic_id',$keywords_ids)
+        ->groupBy('entry_id')
+        ->havingRaw('c='.$keywords_ids_num)
+        ->get();
+        $keywords_entry_ids = $keywords_entry_ids->toArray();
+        $new_keywords_entry_ids = array();
+        foreach($keywords_entry_ids as $keywords_entry_id) {
+          $new_keywords_entry_ids[]=$keywords_entry_id['entry_id'];
+        }
+        $entry_ids[] = $new_keywords_entry_ids;
+      }
+      // sources
+      if (count($sources)>0) {
+        $new_sources = $this->inputArraytoString($sources);
+        $sources_ids = Entry::select("id")
+          ->where([
+            ['status','=', $status],
+            ['transcription_status','=', $transcription_status],
+            ])
+          ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source'))) IN (".$new_sources.")"))
+          ->get();
+        $sources_entry_ids = $sources_ids->toArray();
+        $sources_entry_ids = $this->returnIdsArray($sources_entry_ids);
+        if (!empty($entry_ids[0])) {
+          $new_ids = array();
+          foreach($entry_ids[0] as $entry_id) {
+            if (in_array($entry_id,$sources_entry_ids)) {
+              $new_ids[]=$entry_id;
+            }
+          }
+          $entry_ids[0] = $new_ids;
+        }
+        else {
+          $entry_ids[] = $sources_entry_ids;
+        }
+      }
+      // authors
+      if (count($authors)>0) {
+        $new_authors = $this->inputArraytoString($authors);
+        $authors_ids = Entry::select("id")
+          ->where([
+            ['status','=', $status],
+            ['transcription_status','=', $transcription_status],
+            ])
+          ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))) IN (".$new_authors.")"))
+          ->get();
+        $authors_entry_ids = $authors_ids->toArray();
+        $authors_entry_ids = $this->returnIdsArray($authors_entry_ids);
+        if (!empty($entry_ids[0])) {
+          $new_ids = array();
+          foreach($entry_ids[0] as $entry_id) {
+            if (in_array($entry_id,$authors_entry_ids)) {
+              $new_ids[]=$entry_id;
+            }
+          }
+          $entry_ids[0] = $new_ids;
+        }
+        else {
+          $entry_ids[] = $authors_entry_ids;
+        }
+      }
+      // genders
+      if (count($genders)>0) {
+        $new_genders = $this->inputArraytoString($genders);
+        $genders_ids = Entry::select("id")
+          ->where([
+            ['status','=', $status],
+            ['transcription_status','=', $transcription_status],
+            ])
+          ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender'))) IN (".$new_genders.")"))
+          ->get();
+        $genders_entry_ids = $genders_ids->toArray();
+        $genders_entry_ids = $this->returnIdsArray($genders_entry_ids);
+        if (!empty($entry_ids[0])) {
+          $new_ids = array();
+          foreach($entry_ids[0] as $entry_id) {
+            if (in_array($entry_id,$genders_entry_ids)) {
+              $new_ids[]=$entry_id;
+            }
+          }
+          $entry_ids[0] = $new_ids;
+        }
+        else {
+          $entry_ids[] = $genders_entry_ids;
+        }
+      }
+      // languages
+      if (count($languages)>0) {
+        $new_languages = $this->inputArraytoString($languages);
+        $languages_ids = Entry::select("id")
+          ->where([
+            ['status','=', $status],
+            ['transcription_status','=', $transcription_status],
+            ])
+          ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.language'))) IN (".$new_languages.")"))
+          ->get();
+        $languages_entry_ids = $languages_ids->toArray();
+        $languages_entry_ids = $this->returnIdsArray($languages_entry_ids);
+        if (!empty($entry_ids[0])) {
+          $new_ids = array();
+          foreach($entry_ids[0] as $entry_id) {
+            if (in_array($entry_id,$languages_entry_ids)) {
+              $new_ids[]=$entry_id;
+            }
+          }
+          $entry_ids[0] = $new_ids;
+        }
+        else {
+          $entry_ids[] = $languages_entry_ids;
+        }
+      }
+      // date_created
+      if ($date_start!==null || $date_end!==null) {
+        if ($date_start!==null && $date_end===null) {
+          $date_end = $date_start;
+        }
+        $date_start = date($date_start);
+        $date_end = date($date_end);
+        $date_created_ids = Entry::select("id")
+          ->where([
+            ['status','=', $status],
+            ['transcription_status','=', $transcription_status],
+            ])
+          ->whereBetween(DB::raw("CAST(TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created'))) AS DATE)"), [$date_start, $date_end])
+          ->get();
+        if(count($date_created_ids)>0) {
+          $date_created_entry_ids = $date_created_ids->toArray();
+          $date_created_entry_ids = $this->returnIdsArray($date_created_entry_ids);
+          if (!empty($entry_ids[0])) {
+            $new_ids = array();
+            foreach($entry_ids[0] as $entry_id) {
+              if (in_array($entry_id,$date_created_entry_ids)) {
+                $new_ids[]=$entry_id;
+              }
+            }
+            $entry_ids[0] = $new_ids;
+          }
+          else {
+            $entry_ids[] = $date_created_entry_ids;
+          }
+        }
+        else $entry_ids[] = [];
+
+      }
+
+      if (count($entry_ids)>0) {
+          $items = Entry::whereIn('id',$entry_ids[0])
+            ->where([
+              ['current_version','=', 1],
+              ['status','=', $status],
+              ['transcription_status','=', $transcription_status],
+              ])
+            ->get();
+
+
+
+      } else {
+        if (Entry::first() != null) {
+          $items = Entry::where([
+            ['current_version','=', 1],
+            ['status','=', $status],
+            ['transcription_status','=', $transcription_status],
+            ])
+            ->get();
+
+        } else {
+            $coll = "empty bottle";
+        };
+      };
+      $new_items = array();
+      foreach($items as $item) {
+        $element = json_decode($item->element, true);
+        $completed = 0;
+        $element_pages = $element['pages'];
+        foreach($element_pages as $element_page) {
+          $tstatus = $element_page['transcription_status'];
+          if ($tstatus>0) {
+            $completed++;
+          }
+        }
+        $percentage = 0;
+        if ($completed>0) {
+          $percentage = ($completed/count($element_pages))*100;
+        }
+        $item['completed']=$percentage;
+        $new_items[]=$item;
+      }
+
+      $return_items = array();
+      foreach($new_items as $key=>$row) {
+        $return_items[$key]=$row['completed'];
+      }
+
+      if ($sort==="asc") {
+        array_multisort($return_items, SORT_ASC, $new_items);
+      }
+      if ($sort==="desc") {
+        array_multisort($return_items, SORT_DESC, $new_items);
+      }
+
+      $count = count($new_items);
+      $coll = collect($new_items)->forPage(intval($page), intval($paginate))->values();
+      $paginator = new Paginator($coll, $count, $paginate, $page, [
+        'path'  => Paginator::resolveCurrentPath()
+      ]);
+      return $this->prepareResult(true, $paginator, [], "All user entries");
     }
 
     public function indexfilteredFilters(Request $request)

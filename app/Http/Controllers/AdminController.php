@@ -19,11 +19,19 @@ class AdminController extends Controller
    * @return Entries
    */
   public function listTranscriptions(Request $request) {
-    $sort = "asc";
+    $sort_col = null;
+    $sort_dir = null;
+    $transcription_status = null;
     $paginate = 10;
     $page = 1;
-    if ($request->input('sort') !== null && $request->input('sort') !== "") {
-        $sort = $request->input('sort');
+    if ($request->input('transcription_status') !== null && $request->input('transcription_status') !== "") {
+        $transcription_status = $request->input('transcription_status');
+    }
+    if ($request->input('sort_col') !== null && $request->input('sort_col') !== "") {
+        $sort_col = $request->input('sort_col');
+    }
+    if ($request->input('sort_dir') !== null && $request->input('sort_dir') !== "") {
+        $sort_dir = $request->input('sort_dir');
     }
     if ($request->input('paginate') !== null && $request->input('paginate') !== "") {
         $paginate = $request->input('paginate');
@@ -31,14 +39,29 @@ class AdminController extends Controller
     if ($request->input('page') !== null && $request->input('page') !== "") {
         $page = $request->input('page');
     }
-    $transcriptions_data = Entry::where([
-      ['status','=', 0],
-      ['transcription_status','<=', 0],
-      ])
-      ->orderBy('created_at', $sort)
-      ->paginate($paginate);
+    if ($sort_col!==null && $sort_dir!==null) {
+      $tsEquals = "<=";
+      $tsValue = 0;
+      if ($transcription_status!==null) {
+        $tsEquals = "=";
+        $tsValue = $transcription_status;
+      }
+      $transcriptions_data = Entry::where([
+        ['status','=', 0],
+        ['transcription_status',$tsEquals, $tsValue],
+        ])
+        ->orderBy($sort_col, $sort_dir)
+        ->paginate($paginate);
+    }
+    else {
+      $transcriptions_data = Entry::where([
+        ['status','=', 0],
+        ['transcription_status','<=', 0],
+        ])
+        ->paginate($paginate);
+    }
     $count = count($transcriptions_data);
-    return $this->prepareResult(true, $transcriptions_data, [], "All users transcriptions");
+    return $this->prepareResult(true, $transcriptions_data,$request->input(), "All users transcriptions");
   }
 
   public function Unauthorized(Request $request) {

@@ -659,18 +659,15 @@ class ApiIngestionController extends Controller
         if ($request->input('paginate') !== null && $request->input('paginate') !== "") {
             $paginate = $request->input('paginate');
         }
-        
-        $pages = Entry::select('entry.id')
-          ->distinct('entry.id')
-          ->select('pages.id', 'pages.page_number','pages.entry_id', 'pages.title', 'pages.description', DB::raw($match_sql . "as score"))
-          ->join('pages', 'pages.entry_id','=','entry.id')
+
+        $pages = Pages::select('entry_id', 'title', 'description', DB::raw(($match_sql) . "as score"), 'page_number')
+          ->join('entry', 'entry.id','=','pages.entry_id')
+          ->with('entry')
           ->where('entry.current_version','=','1')
           ->where('pages.transcription_status','=','2')
           ->whereRaw($match_sql)
           ->orderBy('score', 'desc')
           ->paginate($paginate);
-
-
         return $this->prepareResult(true, $pages, $sanitize_sentence, "Results created");
 
     }

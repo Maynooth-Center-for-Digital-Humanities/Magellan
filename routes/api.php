@@ -112,6 +112,7 @@ Route::group(['middleware' => ['api','auth:api']], function(){
 Route::group(['middleware' => ['admin','auth:api']], function(){
 
   Route::get('/admin/transcriptions-list','AdminController@listTranscriptions');
+  Route::get('/admin/search/{sentence}','AdminController@adminsearch');
 
   Route::post('/update-letter-transcription-status/{id}','AdminController@updateTranscriptionStatus');
   Route::post('/update-letter-transcription-page-status/{id}','AdminController@updateTranscriptionPageStatus');

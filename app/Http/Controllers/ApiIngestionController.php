@@ -508,7 +508,7 @@ class ApiIngestionController extends Controller
             $error = true;
             $errors = $validator->errors();
 
-            return $this->prepareResult(false, [$errors], $error['errors'], "Error in updating entry");
+            return $this->prepareResult(false, $errors, $errors, "Error in updating entry");
         }
         else {
 

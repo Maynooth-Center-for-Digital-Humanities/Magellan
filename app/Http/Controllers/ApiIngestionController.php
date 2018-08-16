@@ -661,11 +661,16 @@ class ApiIngestionController extends Controller
         }
 
         $pages = Pages::select('entry_id', 'title', 'description', DB::raw($match_sql . "as score"))
-          ->with('entry')
-          ->where('entry.current_version','=','1')
+          ->with(
+              array('entry'=>function($query) {
+                $query->where('entry.current_version','=', '1');
+              }
+            )
+          )
+          ->where('transcription_status','=','2')
           ->whereRaw($match_sql)
           ->orderBy('score', 'desc')->paginate($paginate);
-        $i=0;
+
         return $this->prepareResult(true, $pages, $sanitize_sentence, "Results created");
 
     }

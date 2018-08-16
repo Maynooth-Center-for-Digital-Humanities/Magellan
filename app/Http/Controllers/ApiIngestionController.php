@@ -653,23 +653,23 @@ class ApiIngestionController extends Controller
 
         $sanitize_sentence = filter_var($sentence, FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH);
 
-        $match_sql = "match(title,description,text_body) against ('$sanitize_sentence' in boolean mode)";
+        $match_sql = "match(`pages`.`title`,`pages`.`description`,`pages`.`text_body`) against ('$sanitize_sentence' in boolean mode)";
 
         $paginate = 10;
         if ($request->input('paginate') !== null && $request->input('paginate') !== "") {
             $paginate = $request->input('paginate');
         }
-
-        $pages = Pages::select('entry_id', 'title', 'description', DB::raw($match_sql . "as score"))
-          ->with(
-              array('entry'=>function($query) {
-                $query->where('entry.current_version','=', '1');
-              }
-            )
-          )
-          ->where('transcription_status','=','2')
+        
+        $pages = Entry::select('entry.id')
+          ->distinct('entry.id')
+          ->select('pages.id', 'pages.page_number','pages.entry_id', 'pages.title', 'pages.description', DB::raw($match_sql . "as score"))
+          ->join('pages', 'pages.entry_id','=','entry.id')
+          ->where('entry.current_version','=','1')
+          ->where('pages.transcription_status','=','2')
           ->whereRaw($match_sql)
-          ->orderBy('score', 'desc')->paginate($paginate);
+          ->orderBy('score', 'desc')
+          ->paginate($paginate);
+
 
         return $this->prepareResult(true, $pages, $sanitize_sentence, "Results created");
 

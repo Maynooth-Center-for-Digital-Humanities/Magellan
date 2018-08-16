@@ -169,7 +169,6 @@ class ApiIngestionController extends Controller
             $errors['document_id'] = $data_json['document_id'];
             $errors['errors'] = $validator->errors();
 
-
             return $this->prepareResult(false, $errors, $error['errors'], "Error in creating entry");
 
         } else {
@@ -178,7 +177,7 @@ class ApiIngestionController extends Controller
             $transcription_status = $data_json['transcription_status'];
 
             // check if the entry already exists in the db
-            $existing_entry = Entry::where('element->document_id', $document_id)->first();
+            $existing_entry = Entry::where('element->document_id', intval($document_id))->first();
             $existing_element = json_decode($existing_entry['element'], true);
             $existing_modified_timestamp = $existing_element['modified_timestamp'];
 
@@ -663,6 +662,7 @@ class ApiIngestionController extends Controller
 
         $pages = Pages::select('entry_id', 'title', 'description', DB::raw($match_sql . "as score"))
           ->with('entry')
+          ->where('entry.current_version','=','1')
           ->whereRaw($match_sql)
           ->orderBy('score', 'desc')->paginate($paginate);
         $i=0;

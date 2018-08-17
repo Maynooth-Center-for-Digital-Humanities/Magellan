@@ -91,14 +91,42 @@ class AdminController extends Controller
     $element = json_decode($entry->element, true);
     $pages = $element['pages'];
     $newPages = array();
+    $pagesCompleted = 0;
+    $pagesApproved = 0;
     foreach($pages as $page) {
-      if ($page['archive_filename']===$archive_filename) {
+      if ($page['archive_filename']!==$archive_filename) {
+        if (intval($page['transcription_status'])===1) {
+          $pagesCompleted++;
+        }
+        if (intval($page['transcription_status'])===2) {
+          $pagesApproved++;
+        }
+      }
+      else if ($page['archive_filename']===$archive_filename) {
         $page['transcription_status'] = intval($transcription_status);
+        if (intval($transcription_status)===1) {
+          $pagesCompleted++;
+        }
+        if (intval($transcription_status)===2) {
+          $pagesApproved++;
+        }
       }
       $newPages[]=$page;
     }
     $element['pages']=$newPages;
-    Entry::whereId($id)->update(['element'=>json_encode($element)]);
+    $totalPages = count($pages);
+    $error = array("completed"=> $pagesCompleted, "approved"=>$pagesApproved);
+    $updateQuery = ['element'=>json_encode($element),'status'=>0, 'transcription_status'=>0];
+    if ($pagesCompleted === $totalPages) {
+        $updateQuery = ['element'=>json_encode($element), 'transcription_status'=>1];
+    }
+    else if ($pagesApproved === $totalPages) {
+      $updateQuery = ['element'=>json_encode($element),'status'=>1, 'transcription_status'=>2];
+    }
+
+    Entry::whereId($id)->update($updateQuery);
+
+
     return $this->prepareResult(true, $newPages, $error, "Page transcription status updated successfully");
   }
 

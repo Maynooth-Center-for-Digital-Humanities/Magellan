@@ -174,7 +174,10 @@ class ApiIngestionController extends Controller
         } else {
             $document_id = intval($data_json['document_id']);
             $entryPages = $data_json['pages'];
-            $transcription_status = $data_json['transcription_status'];
+            $transcription_status = intval($data_json['transcription_status']);
+            if ($transcription_status===0) {
+              $transcription_status = -1;
+            }
 
             // check if the entry already exists in the db
             $existing_entry = Entry::where('element->document_id', intval($document_id))->first();
@@ -334,7 +337,7 @@ class ApiIngestionController extends Controller
           		"archive_filename"=> $saved_file->filename,
           		"original_filename"=> $image->getClientOriginalName(),
           		"last_rev_timestamp"=> $now,
-          		"transcription_status"=> "0",
+          		"transcription_status"=> "-1",
           		"doc_collection_identifier"=> ""
             );
             $pages[]=$page;

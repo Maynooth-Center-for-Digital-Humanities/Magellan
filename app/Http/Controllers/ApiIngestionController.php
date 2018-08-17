@@ -175,7 +175,8 @@ class ApiIngestionController extends Controller
             $document_id = intval($data_json['document_id']);
             $entryPages = $data_json['pages'];
             $transcription_status = intval($data_json['transcription_status']);
-            if ($transcription_status===0) {
+            $status = intval($data_json['status']);
+            if ($transcription_status===0 && $status===0) {
               $transcription_status = -1;
             }
 

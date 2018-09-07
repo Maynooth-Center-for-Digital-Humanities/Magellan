@@ -50,6 +50,8 @@ Route::get('/unauthorised', 'AdminController@Unauthorized');
 // metadata elements
 Route::get('/sources/','ApiIngestionController@sources');
 Route::get('/authors/','ApiIngestionController@authors');
+Route::get('/recipients/','ApiIngestionController@recipients');
+Route::get('/people/','ApiIngestionController@people');
 Route::get('/genders/','ApiIngestionController@genders');
 Route::get('/languages/','ApiIngestionController@languages');
 Route::get('/date_created/','ApiIngestionController@date_created');
@@ -113,9 +115,16 @@ Route::group(['middleware' => ['admin','auth:api']], function(){
 
   Route::get('/admin/transcriptions-list','AdminController@listTranscriptions');
   Route::get('/admin/search/{sentence}','AdminController@adminsearch');
+  Route::get('/admin/list','AdminController@list');
+  Route::get('/admin/user-letter/{id}','AdminController@adminUserLetter');
 
   Route::post('/update-letter-transcription-status/{id}','AdminController@updateTranscriptionStatus');
   Route::post('/update-letter-transcription-page-status/{id}','AdminController@updateTranscriptionPageStatus');
+  Route::post('/admin/update-letter-transcription-page/{id}','AdminController@updateTranscriptionPage');
+
+  Route::post('/admin/update-entry/{id}','AdminController@updateEntry');
+  Route::post('/admin/upload-entry-page/{id}','AdminController@uploadEntryPage');
+  Route::post('/admin/update-entry-status/{id}','AdminController@updateEntryStatus');
 
   // users
   Route::get('/admin/users/','UserController@listUsers');

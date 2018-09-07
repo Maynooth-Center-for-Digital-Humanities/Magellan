@@ -759,6 +759,44 @@ class ApiIngestionController extends Controller
       return $this->prepareResult(true, $creators, [], "All user entries");
     }
 
+    public function recipients() {
+      $recipients = Entry::select(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient')) as recipient, COUNT(*) AS count"))
+      ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient'))"))
+      ->groupBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient'))"))
+      ->orderBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient'))"))
+      ->get();
+
+      return $this->prepareResult(true, $recipients, [], "All user entries");
+    }
+
+    public function people() {
+      $creators = Entry::select(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator')) as person"))
+      ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))"))
+      ->groupBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))"))
+      ->orderBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))"))
+      ->get();
+
+      $recipients = Entry::select(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient')) as person"))
+      ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient'))"))
+      ->groupBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient'))"))
+      ->orderBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient'))"))
+      ->get();
+
+      $people = [];
+      foreach ($creators as $creator) {
+        $people[] = $creator['person'];
+      }
+      foreach($recipients as $recipient) {
+        $new_person = $recipient['person'];
+        if (!in_array($new_person, $people)) {
+          $people[] = $new_person;
+        }
+      }
+      sort($people);
+
+      return $this->prepareResult(true, $people, [], "All user entries");
+    }
+
     public function genders() {
       $genders = Entry::select(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender')) as gender, COUNT(*) AS count"))
       ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender'))"))

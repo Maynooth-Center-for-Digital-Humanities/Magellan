@@ -70,9 +70,9 @@ class Entry extends Model
       // delete xml files
       $file_id = $entry->uploadedfile_id;
       if ($file_id!==null) {
-        $uploaded_file = Uploadedfile::where('id',$file_id);
-        Storage::disk('xml_public')->delete($uploaded_file['filename']);
-        $uploaded_file->delete();
+        $uploaded_file = Uploadedfile::where('id',$file_id)->get();
+        Storage::disk('xml_public')->delete($uploaded_file[0]['filename']);
+        Uploadedfile::where('id',$file_id)->delete();
       }
       // delete entry
       $entry->delete();

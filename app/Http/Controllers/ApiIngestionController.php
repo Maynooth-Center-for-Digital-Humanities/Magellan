@@ -84,31 +84,41 @@ class ApiIngestionController extends Controller
 
     public function show(Request $request, $id)
     {
-        $entry = Entry::where('id', $id)->first();
-
+        $user = Auth::user();
+        if ($user!==null){
+          if ($user->isAdmin()) {
+            $entry = Entry::where('id', $id)->first();
+          }
+          else {
+            $entry = Entry::where([
+              ['id','=', $id],
+              ['current_version','=',1],
+              ['status','=',1],
+              ['transcription_status','=',2],
+            ])->first();
+          }
+        }
+        else {
+          $entry = Entry::where([
+            ['id','=', $id],
+            ['current_version','=',1],
+            ['status','=',1],
+            ['transcription_status','=',2],
+          ])->first();
+        }
         $msg = "Entry found";
         $status = true;
 
 
-        if ($entry != null) {
+        if ($entry !== null) {
             $coll = json_decode($entry->element, true);
-            $file_id = $entry->uploadedfile_id;
-            if ($file_id!==null) {
-              $file = Uploadedfile::select('id', 'filename', 'original_filename')
-                  ->where('id',$file_id)->get();
-              $link = asset('/').'download-xml/'.$file_id;
-              //$link = asset('/').'download-xml/'.$file[0]['filename'];
-              $newFile = $file[0];
-              $newFile['link'] = $link;
-              $coll["file"] = $newFile;
-            }
-
         } else {
             $coll = "";
             $msg = "Entry not found";
             $status = false;
 
-            abort(404, json_encode($this->prepareResult($status, $coll, [], $msg, "Request failed")));
+            return $this->prepareResult($status, $coll, [], $msg, "Request complete");
+
         };
 
         return $this->prepareResult($status, $coll, [], $msg, "Request complete");
@@ -117,12 +127,47 @@ class ApiIngestionController extends Controller
 
     public function showLetter(Request $request, $id)
     {
-        $entry = DB::table('entry')
-          ->join('uploadedfile', 'entry.uploadedfile_id','=','uploadedfile.id')
-          ->select('entry.*')
-          ->where('uploadedfile.original_filename',$id.".xml")
-          ->where('entry.current_version','1')
-          ->first();
+        $user = Auth::user();
+        if ($user!==null){
+          if ($user->isAdmin()) {
+            $entry = DB::table('entry')
+              ->join('uploadedfile', 'entry.uploadedfile_id','=','uploadedfile.id')
+              ->select('entry.*')
+              ->where('uploadedfile.original_filename',$id.".xml")
+              ->where('entry.current_version','1')
+              ->first();
+          }
+          else {
+            $entry = DB::table('entry')
+              ->join('uploadedfile', 'entry.uploadedfile_id','=','uploadedfile.id')
+              ->select('entry.*')
+              ->where([
+                ['uploadedfile.original_filename',$id.".xml"],
+                ['current_version','=',1],
+                ['status','=',1],
+                ['transcription_status','=',2]
+              ]
+                )
+              ->where('entry.current_version','1')
+              ->first();
+          }
+        }
+        else {
+          $entry = DB::table('entry')
+            ->join('uploadedfile', 'entry.uploadedfile_id','=','uploadedfile.id')
+            ->select('entry.*')
+            ->where([
+              ['uploadedfile.original_filename',$id.".xml"],
+              ['current_version','=',1],
+              ['status','=',1],
+              ['transcription_status','=',2]
+            ]
+              )
+            ->where('entry.current_version','1')
+            ->first();
+        }
+
+
 
         $msg = "Entry found";
         $status = true;
@@ -130,22 +175,13 @@ class ApiIngestionController extends Controller
 
         if ($entry != null) {
             $coll = json_decode($entry->element, true);
-            $file_id = $entry->uploadedfile_id;
-            if ($file_id!==null) {
-              $file = Uploadedfile::select('id', 'filename', 'original_filename')
-                  ->where('id',$file_id)->get();
-              $link = asset('/').'download-xml/'.$file_id;
-              $newFile = $file[0];
-              $newFile['link'] = $link;
-              $coll["file"] = $newFile;
-            }
 
         } else {
             $coll = "";
             $msg = "Entry not found";
             $status = false;
 
-            abort(404, json_encode($this->prepareResult($status, $coll, [], $msg, "Request failed")));
+            return $this->prepareResult($status, $coll, [], $msg, "Request complete");
         };
 
         return $this->prepareResult($status, $coll, [], $msg, "Request complete");
@@ -552,12 +588,17 @@ class ApiIngestionController extends Controller
     {
         $msg = "Entry found";
         $status = true;
-        // associate transcription with user
-        Auth::user()->transcriptions()->sync([$id],false);
 
         // load entry
-        $entry = Entry::where('id', $id)->first();
+        $entry = Entry::where([
+            ['id', '=', $id],
+            ['transcription_status','>',-1]
+          ])->first();
         if ($entry != null) {
+
+          // associate transcription with user
+          Auth::user()->transcriptions()->sync([$id],false);
+
           $coll = json_decode($entry->element, true);
           // handle entry lock
           if (!$entry->handleEntryLock()) {
@@ -569,8 +610,7 @@ class ApiIngestionController extends Controller
           $coll = "";
           $msg = "Entry not found";
           $status = false;
-
-          abort(404, json_encode($this->prepareResult($status, $coll, [], $msg, "Request failed")));
+          return $this->prepareResult($status, $coll, [], $msg, "Request failed");
         };
 
         return $this->prepareResult($status, $coll, [], $msg, "Request complete");
@@ -667,8 +707,12 @@ class ApiIngestionController extends Controller
         $pages = Pages::select('entry_id', 'title', 'description', DB::raw(($match_sql) . "as score"), 'page_number')
           ->join('entry', 'entry.id','=','pages.entry_id')
           ->with('entry')
-          ->where('entry.current_version','=','1')
-          ->where('pages.transcription_status','=','2')
+          ->where([
+            ['entry.current_version','=',1],
+            ['entry.status','=',1],
+            ['entry.transcription_status','=',2],
+            ['pages.transcription_status','=',2]
+            ])
           ->whereRaw($match_sql)
           ->orderBy('score', 'desc')
           ->paginate($paginate);
@@ -879,6 +923,9 @@ class ApiIngestionController extends Controller
         return $this->prepareResult(true, [], [], "Please set the status and transcription status.");
       }
 
+      $status = 1;
+      $transcription_status = 2;
+
       $entry_ids = array();
       // keywords
       if (count($keywords_ids)>0) {
@@ -902,6 +949,7 @@ class ApiIngestionController extends Controller
           ->where([
             ['status','=', $status],
             ['transcription_status','=', $transcription_status],
+            ['current_version','=',1]
             ])
           ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source'))) IN (".$new_sources.")"))
           ->get();
@@ -927,6 +975,7 @@ class ApiIngestionController extends Controller
           ->where([
             ['status','=', $status],
             ['transcription_status','=', $transcription_status],
+            ['current_version','=',1]
             ])
           ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))) IN (".$new_authors.")"))
           ->get();
@@ -952,6 +1001,7 @@ class ApiIngestionController extends Controller
           ->where([
             ['status','=', $status],
             ['transcription_status','=', $transcription_status],
+            ['current_version','=',1]
             ])
           ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender'))) IN (".$new_genders.")"))
           ->get();
@@ -977,6 +1027,7 @@ class ApiIngestionController extends Controller
           ->where([
             ['status','=', $status],
             ['transcription_status','=', $transcription_status],
+            ['current_version','=',1]
             ])
           ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.language'))) IN (".$new_languages.")"))
           ->get();
@@ -1006,6 +1057,7 @@ class ApiIngestionController extends Controller
           ->where([
             ['status','=', $status],
             ['transcription_status','=', $transcription_status],
+            ['current_version','=',1]
             ])
           ->whereBetween(DB::raw("CAST(TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created'))) AS DATE)"), [$date_start, $date_end])
           ->get();
@@ -1372,6 +1424,8 @@ class ApiIngestionController extends Controller
       if ($status===null || $transcription_status===null) {
         return $this->prepareResult(true, [], [], "Please set the status and transcription status.");
       }
+      $status = 1;
+      $transcription_status = 2;
 
       $entry_ids = array();
       // keywords
@@ -1397,6 +1451,7 @@ class ApiIngestionController extends Controller
           ->where([
             ['status','=', $status],
             ['transcription_status','=', $transcription_status],
+            ['current_version','=',1]
             ])
           ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source'))) IN (".$new_sources.")"))
           ->get();
@@ -1423,6 +1478,7 @@ class ApiIngestionController extends Controller
           ->where([
             ['status','=', $status],
             ['transcription_status','=', $transcription_status],
+            ['current_version','=',1]
             ])
           ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))) IN (".$new_authors.")"))
           ->get();
@@ -1449,6 +1505,7 @@ class ApiIngestionController extends Controller
           ->where([
             ['status','=', $status],
             ['transcription_status','=', $transcription_status],
+            ['current_version','=',1]
             ])
           ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender'))) IN (".$new_genders.")"))
           ->get();
@@ -1475,6 +1532,7 @@ class ApiIngestionController extends Controller
           ->where([
             ['status','=', $status],
             ['transcription_status','=', $transcription_status],
+            ['current_version','=',1]
             ])
           ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.language'))) IN (".$new_languages.")"))
           ->get();
@@ -1505,6 +1563,7 @@ class ApiIngestionController extends Controller
           ->where([
             ['status','=', $status],
             ['transcription_status','=', $transcription_status],
+            ['current_version','=',1]
             ])
           ->whereBetween(DB::raw("CAST(TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created'))) AS DATE)"), [$date_start, $date_end])
           ->get();

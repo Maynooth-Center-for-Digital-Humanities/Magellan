@@ -267,8 +267,7 @@ class AdminController extends Controller
         ->orderBy($sort_col, $sort_dir)
         ->paginate($paginate);
 
-
-      return $this->prepareResult(true, $entries, $where_q, "Results created");
+      return $this->prepareResult(true, $entries, [], "Results created");
 
   }
 

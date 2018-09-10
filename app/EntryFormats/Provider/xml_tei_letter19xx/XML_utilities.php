@@ -55,6 +55,8 @@ class XML_utilities
         }
     }
 
+
+
     // make everything utf8
     function safe_json_encode($value, $options = 0, $depth = 512) {
         $encoded = json_encode($value, $options, $depth);

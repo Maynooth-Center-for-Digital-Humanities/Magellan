@@ -77,15 +77,44 @@ class AdminController extends Controller
   }
 
   public function updateTranscriptionStatus(Request $request, $id) {
+    $newStatus = $request->input("status");
+
     $error = array();
     $entry = Entry::where('id', $id)->first();
-    $transcription_status = -1;
-    $current_transcription_status = $entry->transcription_status;
-    if ($current_transcription_status===-1) {
-      $transcription_status = 0;
+    // active
+    if ($newStatus!=="inactive") {
+      $element = json_decode($entry->element, true);
+      $pages = $element['pages'];
+      $pagesCompleted = 0;
+      $pagesApproved = 0;
+      foreach($pages as $page) {
+        if (intval($page['transcription_status'])===1) {
+          $pagesCompleted++;
+        }
+        if (intval($page['transcription_status'])===2) {
+          $pagesApproved++;
+        }
+      }
+      $totalPages = count($pages);
+      $error = array("completed"=> $pagesCompleted, "approved"=>$pagesApproved);
+      $updateQuery = ['element'=>json_encode($element),'status'=>0, 'transcription_status'=>0];
+      if ($pagesCompleted === $totalPages) {
+        $updateQuery = ['transcription_status'=>1];
+      }
+      else if ($pagesApproved === $totalPages) {
+        $updateQuery = ['status'=>1, 'transcription_status'=>2];
+      }
+      else {
+        $updateQuery = ['transcription_status'=>0];
+      }
+
     }
-    Entry::whereId($id)->update(['transcription_status'=>$transcription_status]);
-    return $this->prepareResult(true, $transcription_status, $error, "Letter transcription status updated successfully to ".$transcription_status);
+    // inactive
+    else {
+      $updateQuery = ['transcription_status'=>-1];
+    }
+    Entry::whereId($id)->update($updateQuery);
+    return $this->prepareResult(true, [], $error, "Letter transcription status updated successfully");
   }
 
   public function updateTranscriptionPage(Request $request, $id){

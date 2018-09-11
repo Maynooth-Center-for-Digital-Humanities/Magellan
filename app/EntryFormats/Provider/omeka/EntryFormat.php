@@ -27,7 +27,7 @@ class EntryFormat implements EntryFormatInterface
         'creator_gender' => 'string',
         'creator_location' => 'string|max:255',
         'date_created' => 'string|max:255',
-        'description' => 'nullable|string|max:2500',
+        'description' => 'nullable|string',
         'doc_collection' => 'string|max:255',
         'language' => 'required|alpha|max:255',
         'document_id' => 'required|integer',

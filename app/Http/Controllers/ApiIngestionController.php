@@ -207,7 +207,8 @@ class ApiIngestionController extends Controller
 
             return $this->prepareResult(false, $errors, $error['errors'], "Error in creating entry");
 
-        } else {
+        }
+        else {
             $document_id = intval($data_json['document_id']);
             $entryPages = $data_json['pages'];
             $transcription_status = intval($data_json['transcription_status']);
@@ -1163,6 +1164,7 @@ class ApiIngestionController extends Controller
       if ($status===null || $transcription_status===null) {
         return $this->prepareResult(true, [], [], "Please set the status and transcription status.");
       }
+      $status = 0;
 
       $entry_ids = array();
       // keywords
@@ -1186,7 +1188,7 @@ class ApiIngestionController extends Controller
         $sources_ids = Entry::select("id")
           ->where([
             ['status','=', $status],
-            ['transcription_status','=', $transcription_status],
+            ['transcription_status','>', -1],
             ])
           ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source'))) IN (".$new_sources.")"))
           ->get();
@@ -1211,7 +1213,7 @@ class ApiIngestionController extends Controller
         $authors_ids = Entry::select("id")
           ->where([
             ['status','=', $status],
-            ['transcription_status','=', $transcription_status],
+            ['transcription_status','>', -1],
             ])
           ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))) IN (".$new_authors.")"))
           ->get();
@@ -1236,7 +1238,7 @@ class ApiIngestionController extends Controller
         $genders_ids = Entry::select("id")
           ->where([
             ['status','=', $status],
-            ['transcription_status','=', $transcription_status],
+            ['transcription_status','>', -1],
             ])
           ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender'))) IN (".$new_genders.")"))
           ->get();
@@ -1261,7 +1263,7 @@ class ApiIngestionController extends Controller
         $languages_ids = Entry::select("id")
           ->where([
             ['status','=', $status],
-            ['transcription_status','=', $transcription_status],
+            ['transcription_status','>', -1],
             ])
           ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.language'))) IN (".$new_languages.")"))
           ->get();
@@ -1290,7 +1292,7 @@ class ApiIngestionController extends Controller
         $date_created_ids = Entry::select("id")
           ->where([
             ['status','=', $status],
-            ['transcription_status','=', $transcription_status],
+            ['transcription_status','>', -1],
             ])
           ->whereBetween(DB::raw("CAST(TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created'))) AS DATE)"), [$date_start, $date_end])
           ->get();
@@ -1317,9 +1319,8 @@ class ApiIngestionController extends Controller
       if (count($entry_ids)>0) {
           $items = Entry::whereIn('id',$entry_ids[0])
             ->where([
-              ['current_version','=', 1],
               ['status','=', $status],
-              ['transcription_status','=', $transcription_status],
+              ['transcription_status','>', -1],
               ])
             ->get();
 
@@ -1328,9 +1329,8 @@ class ApiIngestionController extends Controller
       } else {
         if (Entry::first() != null) {
           $items = Entry::where([
-            ['current_version','=', 1],
             ['status','=', $status],
-            ['transcription_status','=', $transcription_status],
+            ['transcription_status','>', -1],
             ])
             ->get();
 
@@ -1424,8 +1424,6 @@ class ApiIngestionController extends Controller
       if ($status===null || $transcription_status===null) {
         return $this->prepareResult(true, [], [], "Please set the status and transcription status.");
       }
-      $status = 1;
-      $transcription_status = 2;
 
       $entry_ids = array();
       // keywords

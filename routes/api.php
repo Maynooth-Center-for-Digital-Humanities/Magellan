@@ -108,6 +108,11 @@ Route::group(['middleware' => ['api','auth:api']], function(){
 
       Route::get('/user-letter/{id}','UserController@userLetter');
 
+      // registered show & show letter
+      Route::get('/show/{id}','ApiIngestionController@show');
+
+      Route::get('/show-letter/{id}','ApiIngestionController@showLetter');
+
   });
 
 // admin

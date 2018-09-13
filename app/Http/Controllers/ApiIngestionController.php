@@ -84,7 +84,10 @@ class ApiIngestionController extends Controller
 
     public function show(Request $request, $id)
     {
-        $user = Auth::user();
+        $user = null;
+        if ( $request->has('Authorization') || $request->header('Authorization') ) {
+            $user = Auth::guard('api')->user();
+        }
         if ($user!==null){
           if ($user->isAdmin()) {
             $entry = Entry::where('id', $id)->first();
@@ -127,7 +130,10 @@ class ApiIngestionController extends Controller
 
     public function showLetter(Request $request, $id)
     {
-        $user = Auth::user();
+        $user = null;
+        if ( $request->has('Authorization') || $request->header('Authorization') ) {
+            $user = Auth::guard('api')->user();
+        }
         if ($user!==null){
           if ($user->isAdmin()) {
             $entry = DB::table('entry')
@@ -721,10 +727,50 @@ class ApiIngestionController extends Controller
 
     }
 
-    public function search(Request $request, $expr)
-    {
+    public function search(Request $request, $sentence) {
+        $sort_col = "element->title";
+        $sort_dir = "desc";
+        $status = 1;
+        $transcription_status = 2;
+        $paginate = 10;
+        $page = 1;
+        if ($request->input('status') !== null && $request->input('status') !== "") {
+            $status = $request->input('status');
+        }
+        if ($request->input('transcription_status') !== null && $request->input('transcription_status') !== "") {
+            $transcription_status = $request->input('transcription_status');
+        }
+        if ($request->input('sort_col') !== null && $request->input('sort_col') !== "") {
+            $sort_col = $request->input('sort_col');
+        }
+        if ($request->input('sort_dir') !== null && $request->input('sort_dir') !== "") {
+            $sort_dir = $request->input('sort_dir');
+        }
+        if ($request->input('paginate') !== null && $request->input('paginate') !== "") {
+            $paginate = $request->input('paginate');
+        }
+        if ($request->input('page') !== null && $request->input('page') !== "") {
+            $page = $request->input('page');
+        }
 
-        return true;
+        $sanitize_sentence = filter_var(strtolower($sentence), FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH);
+
+        $where_q = [
+          ['status','=',1],
+          ['current_version','=',1],
+          ['transcription_status','=',2],
+        ];
+        DB::enableQueryLog();
+        $match_sql = " (LOWER(`element`->>'$.title') like '%".$sanitize_sentence."%' or LOWER(`element`->>'$.description') like '%".$sanitize_sentence."%' or LOWER(`fulltext`) like '%".$sanitize_sentence."%' )";
+        $entries = Entry::select('entry.*')
+          ->where($where_q)
+          ->whereRaw(DB::Raw($match_sql))
+          ->groupBy('id')
+          ->orderBy($sort_col, $sort_dir)
+          ->paginate($paginate);
+
+        $realquery = DB::getQueryLog();
+        return $this->prepareResult(true, $entries, $realquery, "Results created");
 
     }
 
@@ -1322,7 +1368,8 @@ class ApiIngestionController extends Controller
               ['status','=', $status],
               ['transcription_status','>', -1],
               ])
-            ->get();
+            ->orderBy('completed',$sort)
+            ->paginate($paginate);
 
 
 
@@ -1332,49 +1379,15 @@ class ApiIngestionController extends Controller
             ['status','=', $status],
             ['transcription_status','>', -1],
             ])
-            ->get();
+          ->orderBy('completed',$sort)
+          ->paginate($paginate);
 
         } else {
             $coll = "empty bottle";
         };
       };
-      $new_items = array();
-      foreach($items as $item) {
-        $element = json_decode($item->element, true);
-        $completed = 0;
-        $element_pages = $element['pages'];
-        foreach($element_pages as $element_page) {
-          $tstatus = $element_page['transcription_status'];
-          if ($tstatus>0) {
-            $completed++;
-          }
-        }
-        $percentage = 0;
-        if ($completed>0) {
-          $percentage = ($completed/count($element_pages))*100;
-        }
-        $item['completed']=$percentage;
-        $new_items[]=$item;
-      }
 
-      $return_items = array();
-      foreach($new_items as $key=>$row) {
-        $return_items[$key]=$row['completed'];
-      }
-
-      if ($sort==="asc") {
-        array_multisort($return_items, SORT_ASC, $new_items);
-      }
-      if ($sort==="desc") {
-        array_multisort($return_items, SORT_DESC, $new_items);
-      }
-
-      $count = count($new_items);
-      $coll = collect($new_items)->forPage(intval($page), intval($paginate))->values();
-      $paginator = new Paginator($coll, $count, $paginate, $page, [
-        'path'  => Paginator::resolveCurrentPath()
-      ]);
-      return $this->prepareResult(true, $paginator, [], "All user entries");
+      return $this->prepareResult(true, $items, [], "All user entries");
     }
 
     public function indexfilteredFilters(Request $request)

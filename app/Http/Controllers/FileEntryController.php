@@ -73,7 +73,7 @@ class FileEntryController extends Controller
               }
 
               // save entry
-              $entry_saved = $entry->save();
+              $entry->save();
 
           }
           else {
@@ -88,8 +88,6 @@ class FileEntryController extends Controller
           else {
             return $this->prepareResult(false, $response, [], "Entry was not created");
           }
-
-          //new Response::json([""]"Files Uploaded Successfully", 200);
         }
         else {
           return new Response("Files Uploaded Successfully", 200);

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use App\Uploadedfile;
 use App\Entry;
+use App\EntryTopic;
 use App\Pages as Pages;
 use App\EntryFormats as EntryFormats;
 use DB;
@@ -85,9 +86,13 @@ class AdminController extends Controller
     if ($newStatus!=="inactive") {
       $element = json_decode($entry->element, true);
       $pages = $element['pages'];
+      $pagesOpen = 0;
       $pagesCompleted = 0;
       $pagesApproved = 0;
       foreach($pages as $page) {
+        if (intval($page['transcription_status'])===0) {
+          $pagesOpen++;
+        }
         if (intval($page['transcription_status'])===1) {
           $pagesCompleted++;
         }
@@ -103,6 +108,9 @@ class AdminController extends Controller
       }
       else if ($pagesApproved === $totalPages) {
         $updateQuery = ['status'=>1, 'transcription_status'=>2];
+      }
+      else if ($pagesCompleted!==$totalPages && $pagesApproved!==$totalPages && $pagesOpen===0) {
+        $updateQuery = ['transcription_status'=>1];
       }
       else {
         $updateQuery = ['transcription_status'=>0];
@@ -145,15 +153,20 @@ class AdminController extends Controller
   public function updateTranscriptionPageStatus(Request $request, $id) {
     $error = array();
     $entry = Entry::where('id', $id)->first();
+    $entryTranscriptionStatus = $entry->transcription_status;
     $archive_filename = $request->input('archive_filename');
     $transcription_status = $request->input('transcription_status');
     $element = json_decode($entry->element, true);
     $pages = $element['pages'];
     $newPages = array();
+    $pagesOpen = 0;
     $pagesCompleted = 0;
     $pagesApproved = 0;
     foreach($pages as $page) {
       if ($page['archive_filename']!==$archive_filename) {
+        if (intval($page['transcription_status'])===0) {
+          $pagesOpen++;
+        }
         if (intval($page['transcription_status'])===1) {
           $pagesCompleted++;
         }
@@ -163,6 +176,9 @@ class AdminController extends Controller
       }
       else if ($page['archive_filename']===$archive_filename) {
         $page['transcription_status'] = intval($transcription_status);
+        if (intval($page['transcription_status'])===0) {
+          $pagesOpen++;
+        }
         if (intval($transcription_status)===1) {
           $pagesCompleted++;
         }
@@ -175,12 +191,33 @@ class AdminController extends Controller
     $element['pages']=$newPages;
     $totalPages = count($pages);
     $error = array("completed"=> $pagesCompleted, "approved"=>$pagesApproved);
-    $updateQuery = ['element'=>json_encode($element),'status'=>0, 'transcription_status'=>0];
-    if ($pagesCompleted === $totalPages) {
-        $updateQuery = ['element'=>json_encode($element), 'transcription_status'=>1];
+    $newTranscriptionStatus = 0;
+    if ($entryTranscriptionStatus===-1) {
+      $newTranscriptionStatus = -1;
     }
+    // overall status open
+    $updateQuery = ['element'=>json_encode($element),'status'=>0, 'transcription_status'=>$newTranscriptionStatus];
+
+    // overall status completed
+    if ($pagesCompleted === $totalPages) {
+        if ($entryTranscriptionStatus>-1) {
+          $newTranscriptionStatus = 1;
+        }
+        $updateQuery = ['element'=>json_encode($element), 'transcription_status'=>$newTranscriptionStatus];
+    }
+    // overall status approved
     else if ($pagesApproved === $totalPages) {
-      $updateQuery = ['element'=>json_encode($element),'status'=>1, 'transcription_status'=>2];
+        if ($entryTranscriptionStatus>-1) {
+          $newTranscriptionStatus = 2;
+        }
+      $updateQuery = ['element'=>json_encode($element),'status'=>1, 'transcription_status'=>$newTranscriptionStatus];
+    }
+    // overall status not open but completed
+    else if ($pagesCompleted!==$totalPages && $pagesApproved!==$totalPages && $pagesOpen===0) {
+      if ($entryTranscriptionStatus>-1) {
+        $newTranscriptionStatus = 1;
+      }
+      $updateQuery = ['element'=>json_encode($element), 'transcription_status'=>$newTranscriptionStatus];
     }
 
     Entry::whereId($id)->update($updateQuery);
@@ -190,7 +227,7 @@ class AdminController extends Controller
   }
 
   public function adminsearch(Request $request, $sentence) {
-      $sort_col = "score";
+      $sort_col = "element->title";
       $sort_dir = "desc";
       $status = null;
       $transcription_status = null;
@@ -215,12 +252,9 @@ class AdminController extends Controller
           $page = $request->input('page');
       }
 
-      $sanitize_sentence = filter_var($sentence, FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH);
-
-      $match_sql = "match(`pages`.`title`,`pages`.`description`,`pages`.`text_body`) against ('$sanitize_sentence' in boolean mode)";
+      $sanitize_sentence = filter_var(strtolower($sentence), FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH);
 
       $where_q = [];
-      $where_q[] = ['entry.current_version','=','1'];
       if ($status!==null) {
         $status_q = ['entry.status','=',$status];
         $where_q[] = $status_q;
@@ -234,18 +268,179 @@ class AdminController extends Controller
         $where_q[] = $transcription_status_q;
       }
 
-      $pages = Pages::select('entry_id', 'entry.id as id', 'title', 'description', DB::raw(($match_sql) . "as score"), 'page_number', 'pages.transcription_status as page_transcription_status')
-        ->join('entry', 'entry.id','=','pages.entry_id')
-        ->with('entry')
+      $match_sql = "( LOWER(`element`->>'$.title') like '%".$sanitize_sentence."%' or LOWER(`element`->>'$.description') like '%".$sanitize_sentence."%' or LOWER(`fulltext`) like '%".$sanitize_sentence."%' )";
+      $entries = Entry::select('entry.*')
         ->where($where_q)
-        ->whereRaw($match_sql)
+        ->whereRaw(DB::Raw($match_sql))
+        ->groupBy('id')
         ->orderBy($sort_col, $sort_dir)
         ->paginate($paginate);
 
-
-      return $this->prepareResult(true, $pages, $where_q, "Results created");
+      return $this->prepareResult(true, $entries, [], "Results created");
 
   }
+
+  public function adminAdvancedSearch (Request $request) {
+      $sort_col = "element->title";
+      $sort_dir = "desc";
+      $page = 1;
+      $paginate = 10;
+      $status = null;
+      $transcription_status = null;
+      $query = null;
+      if ($request->input('sort_col') !== null && $request->input('sort_col') !== "") {
+          $sort_col = $request->input('sort_col');
+      }
+      if ($request->input('sort_dir') !== null && $request->input('sort_dir') !== "") {
+          $sort_dir = $request->input('sort_dir');
+      }
+      if ($request->input('page') !== null && $request->input('page') !== "") {
+          $page = $request->input('page');
+      }
+      if ($request->input('paginate') !== null && $request->input('paginate') !== "") {
+          $paginate = $request->input('paginate');
+      }
+      if ($request->input('status') !== null && $request->input('status') !== "") {
+          $status = $request->input('status');
+      }
+      if ($request->input('transcription_status') !== null && $request->input('transcription_status') !== "") {
+          $transcription_status = $request->input('transcription_status');
+      }
+      if ($request->input('query') !== null && $request->input('query') !== "") {
+          $query = $request->input('query');
+      }
+
+      // topics
+
+      if ($query===null) {
+        return $this->prepareResult(true, [], [], "You must set a query to search");
+      }
+
+      $newQuery = "";
+      $error = "";
+      $i=0;
+      $where_q = [];
+      $queryLength = count($query);
+
+      foreach($query as $queryRow1) {
+        $queryDecode1 = json_decode($queryRow1, true);
+        $type1 = $queryDecode1['type'];
+        if ($type1==="topics") {
+          $queryLength = $queryLength-1;
+        }
+      }
+      $entry_ids = [];
+      foreach($query as $queryRow) {
+        $queryDecode = json_decode($queryRow, true);
+        $type = $queryDecode['type'];
+        $operator = $queryDecode['operator'];
+        $value = $queryDecode['value'];
+        $boolean_operator = $queryDecode['boolean_operator'];
+
+        if ($type!=="topics") {
+          $sanitize_value = filter_var(strtolower($value), FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH);
+          $sanitize_query_value = $sanitize_value;
+          if ($sanitize_value!=="") {
+            $sanitize_query_value = "'".$sanitize_value."'";
+          }
+          $queryOperator = "";
+          if ($operator==="equals") {
+            $queryOperator = "=";
+          }
+          else if ($operator==="contains") {
+            $queryOperator = "like";
+            $sanitize_query_value = "'%".$sanitize_value."%'";
+          }
+          else if ($operator==="not_contains") {
+            $queryOperator = "not like";
+          }
+          else if ($operator==="empty") {
+            $queryOperator = "=''";
+          }
+          else if ($operator==="not_empty") {
+            $queryOperator = "!=''";
+          }
+          if (!(($operator==="equals" || $operator==="contains" || $operator==="not_contains") && $sanitize_query_value==="")) {
+            $i++;
+          }
+          if ($i===$queryLength) {
+            $boolean_operator = "";
+          }
+          if (!(($operator==="equals" || $operator==="contains" || $operator==="not_contains") && $sanitize_query_value==="")) {
+            $newQuery.= " LOWER(".$type.") ".$queryOperator." ".$sanitize_query_value." ".$boolean_operator;
+          }
+        }
+
+        if ($type==="topics") {
+          $topic_ids = [];
+          foreach($value as $topic) {
+            $topic_id = $topic['value'];
+            $topic_ids[]=$topic_id;
+          }
+
+          $keywords_entry_ids = EntryTopic::select('entry_id')
+          ->whereIn('topic_id',$topic_ids)
+          ->groupBy('entry_id')
+          ->get();
+          foreach($keywords_entry_ids as $entry_id) {
+            $entry_ids[]=$entry_id['entry_id'];
+          }
+        }
+
+
+      }
+
+      $where_q = [];
+      if ($status!==null) {
+        $status_q = ['entry.status','=',$status];
+        $where_q[] = $status_q;
+      }
+      $tsEquals = "<=";
+      $tsValue = 0;
+      if ($transcription_status!==null) {
+        $tsEquals = "=";
+        $tsValue = $transcription_status;
+        $transcription_status_q = ['entry.transcription_status',$tsEquals, $tsValue];
+        $where_q[] = $transcription_status_q;
+      }
+
+      $case=0;
+      if ($newQuery!=="" && $entry_ids===[]) {
+        $entries = Entry::select('entry.*')
+          ->where($where_q)
+          ->whereRaw(DB::Raw($newQuery))
+          ->groupBy('id')
+          ->orderBy($sort_col, $sort_dir)
+          ->paginate($paginate);
+      }
+      else if ($newQuery!=="" && $entry_ids!==[]) {
+        $case=2;
+        $entries = Entry::select('entry.*')
+          ->where($where_q)
+          ->whereIn('id',$entry_ids)
+          ->whereRaw(DB::Raw($newQuery))
+          ->groupBy('id')
+          ->orderBy($sort_col, $sort_dir)
+          ->paginate($paginate);
+      }
+      else if ($newQuery==="" && $entry_ids!==[]) {
+        $case=3;
+        $entries = Entry::select('entry.*')
+          ->where($where_q)
+          ->whereIn('id',$entry_ids)
+          ->groupBy('id')
+          ->orderBy($sort_col, $sort_dir)
+          ->paginate($paginate);
+      }
+      else {
+        $entries = [];
+        $error = "Please provide a valid search query";
+      }
+
+      return $this->prepareResult(true, $entries, $case, $entry_ids);
+
+  }
+
 
   public function list(Request $request) {
       $sort_col = "";
@@ -254,6 +449,7 @@ class AdminController extends Controller
       $transcription_status = null;
       $paginate = 10;
       $page = 1;
+
       if ($request->input('status') !== null && $request->input('status') !== "") {
           $status = $request->input('status');
       }
@@ -290,13 +486,12 @@ class AdminController extends Controller
         $transcription_status_q = ['entry.transcription_status',$tsEquals, $tsValue];
         $where_q[] = $transcription_status_q;
       }
-
-      $entries = Entry::select()
+      $items = Entry::select()
         ->where($where_q)
         ->orderBy($sort_col, $sort_dir)
         ->paginate($paginate);
 
-      return $this->prepareResult(true, $entries, [], "Results created");
+      return $this->prepareResult(true, $items, [], "Results created");
 
   }
 
@@ -305,7 +500,6 @@ class AdminController extends Controller
 
       $error = [];
       $responseMsg = "";
-      //return $this->prepareResult(true, $formData['notes'], $error, $responseMsg);
 
       $now = date("Y-m-d\TH:i:sP");
 

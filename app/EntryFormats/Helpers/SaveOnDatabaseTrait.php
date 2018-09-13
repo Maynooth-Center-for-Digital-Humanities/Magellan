@@ -10,6 +10,7 @@ namespace App\EntryFormats\Helpers;
 
 use App\Topic as Topic;
 use App\Pages as Pages;
+use App\Entry as Entry;
 
 trait SaveOnDatabaseTrait
 {
@@ -18,9 +19,17 @@ trait SaveOnDatabaseTrait
 
         $single_element= json_decode($entry->element);
 
+        // save topics
         $this->saveTopics($single_element->topics,$entry);
 
+        // save pages
         $this->savePages($single_element->pages,$entry,$single_element->title,$single_element->description);
+
+        // save fulltext
+        $this->saveFullText($single_element->pages,$entry);
+
+        // save completeness
+        $this->saveCompletenes($single_element->pages,$entry);
 
         return true;
 
@@ -89,5 +98,37 @@ trait SaveOnDatabaseTrait
 
       return true;
 
+    }
+
+    private function saveFullText($all_pages,$entry) {
+      $fullText = "";
+      foreach ($all_pages as $page) {
+        if (isset($page->transcription)) {
+          $fullText = " ".strip_tags(trim($page->transcription));
+        }
+      }
+      Entry::where('id','=',$entry->id)->update(['fulltext'=>$fullText]);
+
+      return true;
+    }
+
+    private function saveCompletenes($all_pages,$entry) {
+      $completed = 0;
+      $percentage = 0;
+      foreach($all_pages as $page) {
+        if (isset($page->transcription_status))
+        $status = intval($page->transcription_status);
+        if ($status>0) {
+          $completed++;
+        }
+      }
+      if ($completed>0) {
+        $percentage = ($completed/count($all_pages))*100;
+      }
+      $entry->completed = $percentage;
+
+      Entry::where('id','=',$entry->id)->update(['completed'=>$percentage]);
+
+      return true;
     }
 }

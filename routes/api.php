@@ -108,11 +108,6 @@ Route::group(['middleware' => ['api','auth:api']], function(){
 
       Route::get('/user-letter/{id}','UserController@userLetter');
 
-      // registered show & show letter
-      Route::get('/show/{id}','ApiIngestionController@show');
-
-      Route::get('/show-letter/{id}','ApiIngestionController@showLetter');
-
   });
 
 // admin
@@ -120,6 +115,7 @@ Route::group(['middleware' => ['admin','auth:api']], function(){
 
   Route::get('/admin/transcriptions-list','AdminController@listTranscriptions');
   Route::get('/admin/search/{sentence}','AdminController@adminsearch');
+  Route::get('/admin/advanced-search/','AdminController@adminAdvancedSearch');
   Route::get('/admin/list','AdminController@list');
   Route::get('/admin/user-letter/{id}','AdminController@adminUserLetter');
 

@@ -781,7 +781,9 @@ class ApiIngestionController extends Controller
           $rootTopics = Topic::select('id', 'name', 'count')->where([
             ['parent_id', '=', '0'],
             ['count', '>', '0'],
-            ])->get();
+            ])
+            ->orderBy('name', 'asc')
+            ->get();
 
           foreach ($rootTopics as $rootTopic) {
             $rootTopic['children'] = Topic::getTopicsChildren($rootTopic['id']);

@@ -527,6 +527,54 @@ class AdminController extends Controller
       if ($request->exists['notes']) {
         $notes = $formData['notes'];
       }
+      $title = "";
+      if ($formData['title']!==null) {
+        $title = $formData['title'];
+      }
+      $source = "";
+      if ($formData['source']!==null) {
+        $source = $formData['source'];
+      }
+      $creator = "";
+      if ($formData['creator']!==null) {
+        $creator = $formData['creator'];
+      }
+      $creator_gender = "";
+      if ($formData['creator_gender']!==null) {
+        $creator_gender = $formData['creator_gender'];
+      }
+      $creator_location = "";
+      if ($formData['creator_location']!==null) {
+        $creator_location = $formData['creator_location'];
+      }
+      $language = "";
+      if ($formData['language']!==null) {
+        $language = $formData['language'];
+      }
+      $recipient = "";
+      if ($formData['recipient']!==null) {
+        $recipient = $formData['recipient'];
+      }
+      $additional_information = "";
+      if ($formData['additional_information']!==null) {
+        $additional_information = $formData['additional_information'];
+      }
+      $document_id = "";
+      if ($formData['document_id']!==null) {
+        $document_id = $formData['document_id'];
+      }
+      $doc_collection = "";
+      if ($formData['doc_collection']!==null) {
+        $doc_collection = $formData['doc_collection'];
+      }
+      $recipient_location = "";
+      if ($formData['recipient_location']!==null) {
+        $recipient_location = $formData['recipient_location'];
+      }
+      $year_of_death_of_author = "";
+      if ($formData['year_of_death_of_author']!==null) {
+        $year_of_death_of_author = $formData['year_of_death_of_author'];
+      }
 
       if (intval($id)===0) {
         // pages
@@ -536,30 +584,30 @@ class AdminController extends Controller
           "type"=>"uploader",
   	      "debug"=>"",
   	      "pages"=> $pages,
-          "title"=> $formData['title'],
-        	"source"=> $formData['source'],
+          "title"=> $title,
+        	"source"=> $source,
           "topics"=> $topics,
-          "creator"=> $formData['creator'],
-        	"creator_gender"=> $formData['creator_gender'],
-          "creator_location"=>$formData['creator_location'],
+          "creator"=> $creator,
+        	"creator_gender"=> $creator_gender,
+          "creator_location"=>$creator_location,
           "user_id"=> Auth::user()->id,
-          "language" => $formData['language'],
-          "recipient" => $formData['recipient'],
+          "language" => $language,
+          "recipient" => $recipient,
           "time_zone"=> "Europe/Dublin",
           "collection"=> "",
           "api_version"=> "1.0",
-          "description"=> $formData['additional_information'],
-          "document_id"=> $formData['document_id'],
+          "description"=> $additional_information,
+          "document_id"=> $document_id,
           "date_created"=>$date_created,
           "number_pages"=>0,
           "request_time"=>$now,
           "terms_of_use"=>'',
           "collection_id"=>"",
-          "doc_collection"=>$formData['doc_collection'],
+          "doc_collection"=>$doc_collection,
           "modified_timestamp"=>$now,
-          "recipient_location"=>$formData['recipient_location'],
+          "recipient_location"=>$recipient_location,
           "copyright_statement"=>'',
-          "year_of_death_of_author"=>$formData['year_of_death_of_author'],
+          "year_of_death_of_author"=>$year_of_death_of_author,
         );
         $format = "admin_metadata";
         $entry_format = EntryFormats\Factory::create($format);
@@ -595,28 +643,28 @@ class AdminController extends Controller
           "type"=>$entryElement['type'],
   	      "debug"=>"",
   	      "pages"=> $entryElement['pages'],
-          "title"=> $formData['title'],
-        	"source"=> $formData['source'],
+          "title"=> $title,
+        	"source"=> $source,
           "topics"=> $topics,
-          "creator"=> $formData['creator'],
-        	"creator_gender"=> $formData['creator_gender'],
-          "creator_location"=>$formData['creator_location'],
+          "creator"=> $creator,
+        	"creator_gender"=> $creator_gender,
+          "creator_location"=>$creator_location,
           "user_id"=> Auth::user()->id,
-          "language" => $formData['language'],
-          "recipient" => $formData['recipient'],
+          "language" => $language,
+          "recipient" => $recipient,
           "time_zone"=> "Europe/Dublin",
           "collection"=> $entryElement['collection'],
           "api_version"=> "1.0",
-          "description"=> $formData['additional_information'],
+          "description"=> $additional_information,
           "document_id"=> $entryElement['document_id'],
           "date_created"=>$date_created,
           "number_pages"=>$entryElement['number_pages'],
           "request_time"=>$now,
           "terms_of_use"=>$entryElement['terms_of_use'],
           "collection_id"=>$entryElement['collection_id'],
-          "doc_collection"=>$formData['doc_collection'],
+          "doc_collection"=>$doc_collection,
           "modified_timestamp"=>$now,
-          "recipient_location"=>$formData['recipient_location'],
+          "recipient_location"=>$recipient_location,
           "copyright_statement"=>$entryElement['copyright_statement'],
           "year_of_death_of_author"=>$formData['year_of_death_of_author'],
         );
@@ -629,7 +677,8 @@ class AdminController extends Controller
             $error = true;
             $errors = $validator->errors();
 
-            return $this->prepareResult(false, $errors, $errors, "Error in updating entry");
+            $test = gettype($formData['creator_location']);
+            return $this->prepareResult(false, $test, $errors, "Error in updating entry");
         }
         else {
           $entry->element = json_encode($json_element);

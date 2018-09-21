@@ -255,6 +255,7 @@ class AdminController extends Controller
       $sanitize_sentence = filter_var(strtolower($sentence), FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH);
 
       $where_q = [];
+      $where_q[] = ['entry.current_version','=','1'];
       if ($status!==null) {
         $status_q = ['entry.status','=',$status];
         $where_q[] = $status_q;
@@ -320,6 +321,7 @@ class AdminController extends Controller
       $error = "";
       $i=0;
       $where_q = [];
+      $where_q[] = ['entry.current_version','=','1'];
       $queryLength = count($query);
 
       foreach($query as $queryRow1) {
@@ -677,8 +679,7 @@ class AdminController extends Controller
             $error = true;
             $errors = $validator->errors();
 
-            $test = gettype($formData['creator_location']);
-            return $this->prepareResult(false, $test, $errors, "Error in updating entry");
+            return $this->prepareResult(false, [], $errors, "Error in updating entry");
         }
         else {
           $entry->element = json_encode($json_element);
@@ -742,6 +743,11 @@ class AdminController extends Controller
         $pages[] = $newPage;
         $element['pages'] = $pages;
         $entry->element = json_encode($element);
+        $newTranscriptionStatus = $entry->transcription_status;
+        if ($newTranscriptionStatus!==-1) {
+          $newTranscriptionStatus = 0;
+        }
+        $entry->transcription_status = $newTranscriptionStatus;
         $entry->save();
         return $this->prepareResult(true, $entry->element, [], "Entry updated successfully");
       }

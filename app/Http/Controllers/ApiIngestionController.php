@@ -835,6 +835,11 @@ class ApiIngestionController extends Controller
 
       $sources = Entry::select(DB::raw("(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source'))) as source, COUNT(*) AS count"))
       ->whereNotNull(DB::raw("(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source')))"))
+      ->where([
+        ['status','=', 1],
+        ['entry.transcription_status','=', 2],
+        ['entry.current_version','=',1]
+      ])
       ->groupBy(DB::raw("(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source')))"))
       ->orderBy(DB::raw("(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source')))"))
       ->get();
@@ -845,6 +850,11 @@ class ApiIngestionController extends Controller
     public function authors() {
       $creators = Entry::select(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator')) as creator, COUNT(*) AS count"))
       ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))"))
+      ->where([
+        ['status','=', 1],
+        ['entry.transcription_status','=', 2],
+        ['entry.current_version','=',1]
+      ])
       ->groupBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))"))
       ->orderBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))"))
       ->get();
@@ -855,6 +865,11 @@ class ApiIngestionController extends Controller
     public function recipients() {
       $recipients = Entry::select(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient')) as recipient, COUNT(*) AS count"))
       ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient'))"))
+      ->where([
+        ['status','=', 1],
+        ['entry.transcription_status','=', 2],
+        ['entry.current_version','=',1]
+      ])
       ->groupBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient'))"))
       ->orderBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient'))"))
       ->get();
@@ -865,12 +880,22 @@ class ApiIngestionController extends Controller
     public function people() {
       $creators = Entry::select(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator')) as person"))
       ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))"))
+      ->where([
+        ['status','=', 1],
+        ['entry.transcription_status','=', 2],
+        ['entry.current_version','=',1]
+      ])
       ->groupBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))"))
       ->orderBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))"))
       ->get();
 
       $recipients = Entry::select(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient')) as person"))
       ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient'))"))
+      ->where([
+        ['status','=', 1],
+        ['entry.transcription_status','=', 2],
+        ['entry.current_version','=',1]
+      ])
       ->groupBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient'))"))
       ->orderBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient'))"))
       ->get();
@@ -893,6 +918,11 @@ class ApiIngestionController extends Controller
     public function genders() {
       $genders = Entry::select(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender')) as gender, COUNT(*) AS count"))
       ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender'))"))
+      ->where([
+        ['status','=', 1],
+        ['entry.transcription_status','=', 2],
+        ['entry.current_version','=',1]
+      ])
       ->groupBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender'))"))
       ->orderBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender'))"))
       ->get();
@@ -903,6 +933,11 @@ class ApiIngestionController extends Controller
     public function languages() {
       $genders = Entry::select(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.language')) as language, COUNT(*) AS count"))
       ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.language'))"))
+      ->where([
+        ['status','=', 1],
+        ['entry.transcription_status','=', 2],
+        ['entry.current_version','=',1]
+      ])
       ->groupBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.language'))"))
       ->orderBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.language'))"))
       ->get();
@@ -913,6 +948,11 @@ class ApiIngestionController extends Controller
     public function date_created() {
       $genders = Entry::select(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created')) as date_created, COUNT(*) AS count"))
       ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created'))"))
+      ->where([
+        ['status','=', 1],
+        ['entry.transcription_status','=', 2],
+        ['entry.current_version','=',1]
+      ])
       ->groupBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created'))"))
       ->orderBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created'))"))
       ->get();

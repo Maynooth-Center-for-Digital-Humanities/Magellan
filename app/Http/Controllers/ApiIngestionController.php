@@ -760,7 +760,7 @@ class ApiIngestionController extends Controller
           ['current_version','=',1],
           ['transcription_status','=',2],
         ];
-        DB::enableQueryLog();
+
         $match_sql = " (LOWER(`element`->>'$.title') like '%".$sanitize_sentence."%' or LOWER(`element`->>'$.description') like '%".$sanitize_sentence."%' or LOWER(`fulltext`) like '%".$sanitize_sentence."%' )";
         $entries = Entry::select('entry.*')
           ->where($where_q)
@@ -769,7 +769,6 @@ class ApiIngestionController extends Controller
           ->orderBy($sort_col, $sort_dir)
           ->paginate($paginate);
 
-        $realquery = DB::getQueryLog();
         return $this->prepareResult(true, $entries, $realquery, "Results created");
 
     }
@@ -777,15 +776,28 @@ class ApiIngestionController extends Controller
     public function viewtopics(Request $request, $expr = "")
     {
       if(empty($expr)) {
+          $status = null;
+          $transcription_status = null;
+          if ($request->input('status')!=="") {
+            $status = $request->input('status');
+          }
+          if ($request->input('transcription_status')!=="") {
+            $transcription_status = $request->input('transcription_status');
+          }
+          $where_q = [
+            ['entry.current_version','=',1]
+          ];
+          if ($status!==null) {
+            $where_q[] = ['entry.status','=', $status];
+          }
+          if ($transcription_status!==null) {
+            $where_q[] = ['entry.transcription_status','=', $transcription_status];
+          }
           $results = array();
           $topic_ids = array();
           $topic_ids_results = EntryTopic::select('entry_topic.topic_id')
             ->join('entry', 'entry.id','=','entry_topic.entry_id')
-            ->where([
-              ['entry.status','=', 1],
-              ['entry.transcription_status','=', 2],
-              ['entry.current_version','=',1]
-            ])
+            ->where($where_q)
             ->get();
           foreach($topic_ids_results as $topic_ids_result) {
             $topic_ids[]=$topic_ids_result['topic_id'];
@@ -845,15 +857,28 @@ class ApiIngestionController extends Controller
      */
 
 
-    public function sources() {
+    public function sources(Request $request) {
+      $status = null;
+      $transcription_status = null;
+      if ($request->input('status')!=="") {
+        $status = $request->input('status');
+      }
+      if ($request->input('transcription_status')!=="") {
+        $transcription_status = $request->input('transcription_status');
+      }
+      $where_q = [
+        ['entry.current_version','=',1]
+      ];
+      if ($status!==null) {
+        $where_q[] = ['entry.status','=', $status];
+      }
+      if ($transcription_status!==null) {
+        $where_q[] = ['entry.transcription_status','=', $transcription_status];
+      }
 
       $sources = Entry::select(DB::raw("(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source'))) as source, COUNT(*) AS count"))
       ->whereNotNull(DB::raw("(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source')))"))
-      ->where([
-        ['status','=', 1],
-        ['entry.transcription_status','=', 2],
-        ['entry.current_version','=',1]
-      ])
+      ->where($where_q)
       ->groupBy(DB::raw("(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source')))"))
       ->orderBy(DB::raw("(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source')))"))
       ->get();
@@ -861,14 +886,27 @@ class ApiIngestionController extends Controller
       return $this->prepareResult(true, $sources, [], "All user entries");
     }
 
-    public function authors() {
+    public function authors(Request $request) {
+      $status = null;
+      $transcription_status = null;
+      if ($request->input('status')!=="") {
+        $status = $request->input('status');
+      }
+      if ($request->input('transcription_status')!=="") {
+        $transcription_status = $request->input('transcription_status');
+      }
+      $where_q = [
+        ['entry.current_version','=',1]
+      ];
+      if ($status!==null) {
+        $where_q[] = ['entry.status','=', $status];
+      }
+      if ($transcription_status!==null) {
+        $where_q[] = ['entry.transcription_status','=', $transcription_status];
+      }
       $creators = Entry::select(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator')) as creator, COUNT(*) AS count"))
       ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))"))
-      ->where([
-        ['status','=', 1],
-        ['entry.transcription_status','=', 2],
-        ['entry.current_version','=',1]
-      ])
+      ->where($where_q)
       ->groupBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))"))
       ->orderBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))"))
       ->get();
@@ -876,14 +914,27 @@ class ApiIngestionController extends Controller
       return $this->prepareResult(true, $creators, [], "All user entries");
     }
 
-    public function recipients() {
+    public function recipients(Request $request) {
+      $status = null;
+      $transcription_status = null;
+      if ($request->input('status')!=="") {
+        $status = $request->input('status');
+      }
+      if ($request->input('transcription_status')!=="") {
+        $transcription_status = $request->input('transcription_status');
+      }
+      $where_q = [
+        ['entry.current_version','=',1]
+      ];
+      if ($status!==null) {
+        $where_q[] = ['entry.status','=', $status];
+      }
+      if ($transcription_status!==null) {
+        $where_q[] = ['entry.transcription_status','=', $transcription_status];
+      }
       $recipients = Entry::select(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient')) as recipient, COUNT(*) AS count"))
       ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient'))"))
-      ->where([
-        ['status','=', 1],
-        ['entry.transcription_status','=', 2],
-        ['entry.current_version','=',1]
-      ])
+      ->where($where_q)
       ->groupBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient'))"))
       ->orderBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient'))"))
       ->get();
@@ -891,25 +942,34 @@ class ApiIngestionController extends Controller
       return $this->prepareResult(true, $recipients, [], "All user entries");
     }
 
-    public function people() {
+    public function people(Request $request) {
+      $status = null;
+      $transcription_status = null;
+      if ($request->input('status')!=="") {
+        $status = $request->input('status');
+      }
+      if ($request->input('transcription_status')!=="") {
+        $transcription_status = $request->input('transcription_status');
+      }
+      $where_q = [
+        ['entry.current_version','=',1]
+      ];
+      if ($status!==null) {
+        $where_q[] = ['entry.status','=', $status];
+      }
+      if ($transcription_status!==null) {
+        $where_q[] = ['entry.transcription_status','=', $transcription_status];
+      }
       $creators = Entry::select(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator')) as person"))
       ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))"))
-      ->where([
-        ['status','=', 1],
-        ['entry.transcription_status','=', 2],
-        ['entry.current_version','=',1]
-      ])
+      ->where($where_q)
       ->groupBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))"))
       ->orderBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))"))
       ->get();
 
       $recipients = Entry::select(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient')) as person"))
       ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient'))"))
-      ->where([
-        ['status','=', 1],
-        ['entry.transcription_status','=', 2],
-        ['entry.current_version','=',1]
-      ])
+      ->where($where_q)
       ->groupBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient'))"))
       ->orderBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.recipient'))"))
       ->get();
@@ -929,14 +989,27 @@ class ApiIngestionController extends Controller
       return $this->prepareResult(true, $people, [], "All user entries");
     }
 
-    public function genders() {
+    public function genders(Request $request) {
+      $status = null;
+      $transcription_status = null;
+      if ($request->input('status')!=="") {
+        $status = $request->input('status');
+      }
+      if ($request->input('transcription_status')!=="") {
+        $transcription_status = $request->input('transcription_status');
+      }
+      $where_q = [
+        ['entry.current_version','=',1]
+      ];
+      if ($status!==null) {
+        $where_q[] = ['entry.status','=', $status];
+      }
+      if ($transcription_status!==null) {
+        $where_q[] = ['entry.transcription_status','=', $transcription_status];
+      }
       $genders = Entry::select(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender')) as gender, COUNT(*) AS count"))
       ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender'))"))
-      ->where([
-        ['status','=', 1],
-        ['entry.transcription_status','=', 2],
-        ['entry.current_version','=',1]
-      ])
+      ->where($where_q)
       ->groupBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender'))"))
       ->orderBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender'))"))
       ->get();
@@ -944,14 +1017,27 @@ class ApiIngestionController extends Controller
       return $this->prepareResult(true, $genders, [], "All user entries");
     }
 
-    public function languages() {
+    public function languages(Request $request) {
+      $status = null;
+      $transcription_status = null;
+      if ($request->input('status')!=="") {
+        $status = $request->input('status');
+      }
+      if ($request->input('transcription_status')!=="") {
+        $transcription_status = $request->input('transcription_status');
+      }
+      $where_q = [
+        ['entry.current_version','=',1]
+      ];
+      if ($status!==null) {
+        $where_q[] = ['entry.status','=', $status];
+      }
+      if ($transcription_status!==null) {
+        $where_q[] = ['entry.transcription_status','=', $transcription_status];
+      }
       $genders = Entry::select(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.language')) as language, COUNT(*) AS count"))
       ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.language'))"))
-      ->where([
-        ['status','=', 1],
-        ['entry.transcription_status','=', 2],
-        ['entry.current_version','=',1]
-      ])
+      ->where($where_q)
       ->groupBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.language'))"))
       ->orderBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.language'))"))
       ->get();
@@ -959,14 +1045,27 @@ class ApiIngestionController extends Controller
       return $this->prepareResult(true, $genders, [], "All user entries");
     }
 
-    public function date_created() {
+    public function date_created(Request $request) {
+      $status = null;
+      $transcription_status = null;
+      if ($request->input('status')!=="") {
+        $status = $request->input('status');
+      }
+      if ($request->input('transcription_status')!=="") {
+        $transcription_status = $request->input('transcription_status');
+      }
+      $where_q = [
+        ['entry.current_version','=',1]
+      ];
+      if ($status!==null) {
+        $where_q[] = ['entry.status','=', $status];
+      }
+      if ($transcription_status!==null) {
+        $where_q[] = ['entry.transcription_status','=', $transcription_status];
+      }
       $genders = Entry::select(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created')) as date_created, COUNT(*) AS count"))
       ->whereNotNull(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created'))"))
-      ->where([
-        ['status','=', 1],
-        ['entry.transcription_status','=', 2],
-        ['entry.current_version','=',1]
-      ])
+      ->where($where_q)
       ->groupBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created'))"))
       ->orderBy(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created'))"))
       ->get();

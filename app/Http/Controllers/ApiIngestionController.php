@@ -778,7 +778,21 @@ class ApiIngestionController extends Controller
     {
       if(empty($expr)) {
           $results = array();
-          $rootTopics = Topic::select('id', 'name', 'count')->where([
+          $topic_ids = array();
+          $topic_ids_results = EntryTopic::select('entry_topic.topic_id')
+            ->join('entry', 'entry.id','=','entry_topic.entry_id')
+            ->where([
+              ['entry.status','=', 1],
+              ['entry.transcription_status','=', 2],
+              ['entry.current_version','=',1]
+            ])
+            ->get();
+          foreach($topic_ids_results as $topic_ids_result) {
+            $topic_ids[]=$topic_ids_result['topic_id'];
+          }
+          $rootTopics = Topic::select('id', 'name', 'count')
+            ->whereIn('id', $topic_ids)
+            ->where([
             ['parent_id', '=', '0'],
             ['count', '>', '0'],
             ])
@@ -796,7 +810,7 @@ class ApiIngestionController extends Controller
 
       }
 
-      return  $this->prepareResult(true,$results, "No Errors","Results created");
+      return  $this->prepareResult(true,$results, [],"Results created");
     }
 
     public function viewtopicsbyid(Request $request, $ids)

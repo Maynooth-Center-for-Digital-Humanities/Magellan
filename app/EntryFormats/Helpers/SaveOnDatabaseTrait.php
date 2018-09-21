@@ -79,11 +79,11 @@ trait SaveOnDatabaseTrait
             $tp->count = 1;
             $tp->save();
 
-        }elseif (isset($find_topic_id->id)){
+        } elseif (isset($find_topic_id->id)){
 
             $tp = $find_topic_id;
 
-        }else{
+        } else {
 
             // Fabiano @TODO LOG THE ERROR TO AN ERROR TABLE AND ASSIGN ONE TOPIC
 

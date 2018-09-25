@@ -220,7 +220,7 @@ class AdminController extends Controller
       $updateQuery = ['element'=>json_encode($element), 'transcription_status'=>$newTranscriptionStatus];
     }
 
-    Entry::whereId($id)->update($updateQuery);
+    Entry::find($id)->update($updateQuery);
 
 
     return $this->prepareResult(true, $newPages, $error, "Page transcription status updated successfully");

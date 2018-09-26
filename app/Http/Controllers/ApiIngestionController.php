@@ -287,7 +287,7 @@ class ApiIngestionController extends Controller
 
             // check if the entry already exists in the db and update if pages are empty
             $existing_entries = Entry::where('element->document_id', intval($document_id))->get();
-            if ($existing_entries!==null) {
+            if (!empty($existing_entries) && $existing_entries!==null) {
               foreach ($existing_entries as $existing_entry) {
                 $existing_element = json_decode($existing_entry['element'], true);
                 $existing_pages = $existing_element['pages'];
@@ -339,8 +339,9 @@ class ApiIngestionController extends Controller
         foreach($differences as $difference) {
           $nottransferedIds[]=$difference;
         }
+        $new_entry = Entry::where('element->document_id', 57000)->get();
 
-      return $this->prepareResult(true, $nottransferedIds, count($differences), "All user entries");
+      return $this->prepareResult(true, $nottransferedIds, $new_entry, "All user entries");
     }
 
     public function uploadLetter(Request $request,$id) {

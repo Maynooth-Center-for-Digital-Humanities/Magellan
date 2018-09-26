@@ -71,6 +71,8 @@ Route::group(['middleware' => ['api','auth:api']], function(){
 
       Route::post('/add/','ApiIngestionController@store');
 
+      Route::post('/missed-files-patch/','ApiIngestionController@missedFilesPatch');
+
       Route::get('/logout/','Auth\LoginController@resetAccessToken');
 
       Route::post('/fileupload',[

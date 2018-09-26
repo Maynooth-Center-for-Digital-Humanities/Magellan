@@ -257,7 +257,6 @@ class ApiIngestionController extends Controller
     public function missedFilesPatch(Request $request)
     {
 
-
         $error = false;
         $format = "uploader";
         $data = $request->input('data');
@@ -275,7 +274,6 @@ class ApiIngestionController extends Controller
             $errors['errors'] = $validator->errors();
 
             return $this->prepareResult(false, $errors, $error['errors'], "Error in creating entry");
-
         }
         else {
             $response = array();
@@ -306,7 +304,7 @@ class ApiIngestionController extends Controller
               $current_version = 1;
 
               $entry = new Entry();
-              $entry->element = json_encode($data_json);
+              $entry->element = $data;
               $entry->user_id = Auth::user()->id;
               $entry->current_version = $current_version;
               $entry->status = $this->getEntryStatus($entryPages);
@@ -315,9 +313,9 @@ class ApiIngestionController extends Controller
 
               $entry->save();
 
-
+              $response[] = "New entry for Omeka document with id:".$document_id." created successfully";
             }
-            return $this->prepareResult(true, $response, $error['errors'], "Missed Omeka document with id:".$document_id." patched successfully");
+            return $this->prepareResult(true, $response, $error['errors'], $document_id);
         }
 
     }

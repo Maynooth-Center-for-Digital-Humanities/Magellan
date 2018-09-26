@@ -255,42 +255,9 @@ class ApiIngestionController extends Controller
     }
 
     public function testAPI() {
+        $items = Entry::where('element->pages','=','\[\]')->get();
 
-        $new_items = array();
-        $items = Entry::where([
-            ['current_version','=', 1],
-            ['status','=', 0],
-            ['transcription_status','=', 0],
-            ])
-            ->orderBy('id')
-            ->get();
-        foreach($items as $item) {
-          $element = json_decode($item->element, true);
-          $completed = 0;
-          $pages = $element['pages'];
-          foreach($pages as $page) {
-            $tstatus = $page['transcription_status'];
-            if ($tstatus>0) {
-              $completed++;
-            }
-          }
-          $percentage = 0;
-          if ($completed>0) {
-            $percentage = ($completed/count($pages))*100;
-          }
-          $item['completed']=$percentage;
-          $new_items[]=$item;
-        }
-
-        $return_items = array();
-        foreach($new_items as $key=>$row) {
-          $return_items[$key]=$row['completed'];
-        }
-
-        array_multisort($return_items, SORT_ASC, $new_items);
-        $collection = collect($new_items);
-
-      return $this->prepareResult(true, $collection->forPage(1,10), [], "All user entries");
+      return $this->prepareResult(true, $items, [], "All user entries");
     }
 
     public function uploadLetter(Request $request,$id) {
@@ -769,7 +736,7 @@ class ApiIngestionController extends Controller
           ->orderBy($sort_col, $sort_dir)
           ->paginate($paginate);
 
-        return $this->prepareResult(true, $entries, $realquery, "Results created");
+        return $this->prepareResult(true, $entries, [], "Results created");
 
     }
 

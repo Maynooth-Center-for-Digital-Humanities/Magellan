@@ -256,67 +256,71 @@ class ApiIngestionController extends Controller
 
     public function missedFilesPatch(Request $request)
     {
-        $error = false;
-        $format = "uploader";
-        $data = $request->input('data');
 
-        $entry_format = EntryFormats\Factory::create($format);
-        $data_json = json_decode($data,true);
-        $document_id = intval($data_json['document_id']);
+        $items = json_decode($request->input('data'),true);
+        foreach($items as $data) {
+          $error = false;
+          $format = "uploader";
 
-        $validator = $entry_format->valid($data_json);
 
-        if ($validator->fails()) {
+          $entry_format = EntryFormats\Factory::create($format);
+          $data_json = json_decode($data,true);
+          $document_id = intval($data_json['document_id']);
 
-            $error = true;
-            $errors['document_id'] = $data_json['document_id'];
-            $errors['errors'] = $validator->errors();
+          $validator = $entry_format->valid($data_json);
 
-            return $this->prepareResult(false, $errors, $error['errors'], "Error in creating entry");
+          if ($validator->fails()) {
 
-        }
-        else {
-            $response = array();
-            $document_id = intval($data_json['document_id']);
-            $entryPages = $data_json['pages'];
-            $transcription_status = intval($data_json['transcription_status']);
-            $status = intval($data_json['status']);
-            if ($transcription_status===0 && $status===0) {
-              $transcription_status = -1;
-            }
+              $error = true;
+              $errors['document_id'] = $data_json['document_id'];
+              $errors['errors'] = $validator->errors();
 
-            // check if the entry already exists in the db and update if pages are empty
-            $existing_entries = Entry::where('element->document_id', intval($document_id))->get();
-            if ($existing_entries!==null) {
-              foreach ($existing_entries as $existing_entry) {
-                $existing_element = json_decode($existing_entry['element'], true);
-                $existing_pages = $existing_element['pages'];
-                if (empty($existing_pages)) {
-                  $existing_element['pages']=$entryPages;
-                  $existing_entry->element=$existing_element;
-                  $existing_entry->save();
+              return $this->prepareResult(false, $errors, $error['errors'], "Error in creating entry");
 
-                  $response[] = $existing_entry->id." pages updated successfully";
+          }
+          else {
+              $response = array();
+              $document_id = intval($data_json['document_id']);
+              $entryPages = $data_json['pages'];
+              $transcription_status = intval($data_json['transcription_status']);
+              $status = intval($data_json['status']);
+              if ($transcription_status===0 && $status===0) {
+                $transcription_status = -1;
+              }
+
+              // check if the entry already exists in the db and update if pages are empty
+              $existing_entries = Entry::where('element->document_id', intval($document_id))->get();
+              if ($existing_entries!==null) {
+                foreach ($existing_entries as $existing_entry) {
+                  $existing_element = json_decode($existing_entry['element'], true);
+                  $existing_pages = $existing_element['pages'];
+                  if (empty($existing_pages)) {
+                    $existing_element['pages']=$entryPages;
+                    $existing_entry->element=$existing_element;
+                    $existing_entry->save();
+
+                    $response[] = $existing_entry->id." pages updated successfully";
+                  }
                 }
               }
-            }
-            else {
-              $current_version = 1;
+              else {
+                $current_version = 1;
 
-              $entry = new Entry();
-              $entry->element = json_encode($data_json);
-              $entry->user_id = Auth::user()->id;
-              $entry->current_version = $current_version;
-              $entry->status = $this->getEntryStatus($entryPages);
-              $entry->transcription_status = $transcription_status;
-              $entry->notes = "";
+                $entry = new Entry();
+                $entry->element = json_encode($data_json);
+                $entry->user_id = Auth::user()->id;
+                $entry->current_version = $current_version;
+                $entry->status = $this->getEntryStatus($entryPages);
+                $entry->transcription_status = $transcription_status;
+                $entry->notes = "";
 
-              $entry->save();
+                $entry->save();
 
 
-            }
-            return $this->prepareResult(true, $response, $error['errors'], "Missed Omeka document with id:".$document_id." patched successfully");
-        }
+              }
+              return $this->prepareResult(true, $response, $error['errors'], "Missed Omeka document with id:".$document_id." patched successfully");
+          }
+        }        
 
     }
 

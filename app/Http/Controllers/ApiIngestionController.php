@@ -293,7 +293,7 @@ class ApiIngestionController extends Controller
                 $existing_pages = $existing_element['pages'];
                 if (empty($existing_pages)) {
                   $existing_element['pages']=$entryPages;
-                  $existing_entry->element=$existing_element;
+                  $existing_entry->element=json_encode($existing_element);
                   $existing_entry->save();
 
                   $response[] = $existing_entry->id." pages updated successfully";
@@ -304,7 +304,7 @@ class ApiIngestionController extends Controller
               $current_version = 1;
 
               $entry = new Entry();
-              $entry->element = $data;
+              $entry->element = json_encode($data_json);
               $entry->user_id = Auth::user()->id;
               $entry->current_version = $current_version;
               $entry->status = $this->getEntryStatus($entryPages);

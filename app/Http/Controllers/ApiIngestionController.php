@@ -300,7 +300,7 @@ class ApiIngestionController extends Controller
                 }
               }
             }
-            else {
+            else if (count($existing_entries)===0){
               $current_version = 1;
 
               $entry = new Entry();
@@ -339,9 +339,12 @@ class ApiIngestionController extends Controller
         foreach($differences as $difference) {
           $nottransferedIds[]=$difference;
         }
-        $new_entry = Entry::where('element->document_id', 57000)->get();
-
-      return $this->prepareResult(true, $nottransferedIds, $new_entry, "All user entries");
+        $new_entry = Entry::where('element->document_id', 5345)->get();
+        $error = "none";
+        if (count($new_entry)===0) {
+          $error = "one";
+        }
+      return $this->prepareResult(true, $new_entry, $error, "All user entries");
     }
 
     public function uploadLetter(Request $request,$id) {

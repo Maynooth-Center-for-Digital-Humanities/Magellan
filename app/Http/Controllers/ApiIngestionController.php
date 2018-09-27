@@ -653,7 +653,8 @@ class ApiIngestionController extends Controller
         // load entry
         $entry = Entry::where([
             ['id', '=', $id],
-            ['transcription_status','>',-1]
+            ['transcription_status','>',-1],
+            ['status','=',0]
           ])->first();
         if ($entry != null) {
 

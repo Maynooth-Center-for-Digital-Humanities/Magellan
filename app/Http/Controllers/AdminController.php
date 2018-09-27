@@ -195,35 +195,43 @@ class AdminController extends Controller
     if ($entryTranscriptionStatus===-1) {
       $newTranscriptionStatus = -1;
     }
-    // overall status open
-    $updateQuery = ['element'=>json_encode($element),'status'=>0, 'transcription_status'=>$newTranscriptionStatus];
 
-    // overall status completed
+    $entry = Entry::find($id);
+
     if ($pagesCompleted === $totalPages) {
-        if ($entryTranscriptionStatus>-1) {
-          $newTranscriptionStatus = 1;
-        }
-        $updateQuery = ['element'=>json_encode($element), 'transcription_status'=>$newTranscriptionStatus];
+      if ($entryTranscriptionStatus>-1) {
+        $newTranscriptionStatus = 1;
+      }
+      $entry->element = json_encode($element);
+      $entry->transcription_status = $newTranscriptionStatus;
+      $entry->save();
     }
-    // overall status approved
     else if ($pagesApproved === $totalPages) {
-        if ($entryTranscriptionStatus>-1) {
-          $newTranscriptionStatus = 2;
-        }
-      $updateQuery = ['element'=>json_encode($element),'status'=>1, 'transcription_status'=>$newTranscriptionStatus];
+      if ($entryTranscriptionStatus>-1) {
+        $newTranscriptionStatus = 2;
+      }
+      $entry->element = json_encode($element);
+      $entry->status = 1;
+      $entry->transcription_status = $newTranscriptionStatus;
+      $entry->save();
     }
-    // overall status not open but completed
     else if ($pagesCompleted!==$totalPages && $pagesApproved!==$totalPages && $pagesOpen===0) {
       if ($entryTranscriptionStatus>-1) {
         $newTranscriptionStatus = 1;
       }
-      $updateQuery = ['element'=>json_encode($element), 'transcription_status'=>$newTranscriptionStatus];
+
+      $entry->element = json_encode($element);
+      $entry->transcription_status = $newTranscriptionStatus;
+      $entry->save();
+    }
+    else {
+      $entry->element = json_encode($element);
+      $entry->status = 0;
+      $entry->transcription_status = $newTranscriptionStatus;
+      $entry->save();
     }
 
-    Entry::find($id)->update($updateQuery);
-
-
-    return $this->prepareResult(true, $newPages, $error, "Page transcription status updated successfully");
+    return $this->prepareResult(true, $newPages, Entry::find($id), "Page transcription status updated successfully");
   }
 
   public function adminsearch(Request $request, $sentence) {

@@ -35,31 +35,6 @@ trait SaveOnDatabaseTrait
 
     }
 
-    private function savePages($all_pages,$entry,$title,$description) {
-      $find_page = Pages::where('entry_id',$entry->id)->delete();
-      $pgn=0;
-      foreach($all_pages as $page) {
-        $transcription="";
-        $transcription_status=0;
-        if (isset($page->transcription_status)) {
-          $transcription_status = $page->transcription_status;
-        }
-        $transcription.= " ".strip_tags($page->transcription);
-        $pgn++;
-
-
-        $pg = new Pages();
-        $pg->title = $title;
-        $pg->description=$description;
-        $pg->text_body=$transcription;
-        $pg->page_number=$pgn;
-        $pg->entry_id=$entry->id;
-        $pg->transcription_status=$transcription_status;
-        $pg->save();
-      }
-
-    }
-
     private function saveTopics($all_topics,$entry){
       //$clear_entry_topics = $entry->topic()->delete();
       $tp_ids = array();
@@ -97,6 +72,31 @@ trait SaveOnDatabaseTrait
       $entry->topic()->sync($tp_ids);
 
       return true;
+
+    }
+
+    private function savePages($all_pages,$entry,$title,$description) {
+      $find_page = Pages::where('entry_id',$entry->id)->delete();
+      $pgn=0;
+      foreach($all_pages as $page) {
+        $transcription="";
+        $transcription_status=0;
+        if (isset($page->transcription_status)) {
+          $transcription_status = $page->transcription_status;
+        }
+        $transcription.= " ".strip_tags($page->transcription);
+        $pgn++;
+
+
+        $pg = new Pages();
+        $pg->title = $title;
+        $pg->description=$description;
+        $pg->text_body=$transcription;
+        $pg->page_number=$pgn;
+        $pg->entry_id=$entry->id;
+        $pg->transcription_status=$transcription_status;
+        $pg->save();
+      }
 
     }
 

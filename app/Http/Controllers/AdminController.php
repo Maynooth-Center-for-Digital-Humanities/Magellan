@@ -704,9 +704,8 @@ class AdminController extends Controller
   public function uploadEntryPage(Request $request, $id) {
     $postData = $request->all();
     $now = date("Y-m-d\TH:i:sP");
-    $image = $postData['image'];
+    $image = $request->file('image');
     $uploaded_image_type = $postData['additional_img_info'];
-
     $imgs_errors = array();
     if (intval($id)>0) {
       // upload image and store
@@ -714,9 +713,12 @@ class AdminController extends Controller
       $fileEntryController = new FileEntryController();
       if ($fileEntryController->isImage($image)) {
         $extension=$image->getClientOriginalExtension();
-        $filename = $image->getFilename().'.'.$extension;
+        $filename = $image->getFilename().'.'.strtolower($extension);
+
         Storage::disk('fullsize')->put($filename, File::get($image));
+
         $fileEntryController->makeThumbnail($filename, 200);
+
         $saved_file = $fileEntryController->store($image, "uploader page", Auth::user()->id);
 
 

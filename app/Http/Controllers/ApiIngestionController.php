@@ -412,7 +412,7 @@ class ApiIngestionController extends Controller
           $fileEntryController = new FileEntryController();
           if ($fileEntryController->isImage($image)) {
             $extension=$image->getClientOriginalExtension();
-            $filename = $image->getFilename().'.'.$extension;
+            $filename = $image->getFilename().'.'.strtolower($extension);
             Storage::disk('fullsize')->put($filename, File::get($image));
             $fileEntryController->makeThumbnail($filename, 200);
             $saved_file = $fileEntryController->store($image, "uploader page", Auth::user()->id);

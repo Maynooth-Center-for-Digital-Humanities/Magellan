@@ -223,11 +223,14 @@ class ApiIngestionController extends Controller
               $transcription_status = -1;
             }
 
-            // check if the entry already exists in the db
-            $existing_entry = Entry::where('element->document_id', intval($document_id))->first();
-            $existing_element = json_decode($existing_entry['element'], true);
-            $existing_modified_timestamp = $existing_element['modified_timestamp'];
+            $existing_entry = null;
+            if ($document_id>0) {
 
+              // check if the entry already exists in the db
+              $existing_entry = Entry::where('element->document_id', intval($document_id))->first();
+              $existing_element = json_decode($existing_entry['element'], true);
+              $existing_modified_timestamp = $existing_element['modified_timestamp'];
+            }
             if ($existing_entry!==null && $existing_modified_timestamp===$data_json['modified_timestamp']) {
               return $this->prepareResult(true, [], $error['errors'], "Entry already inserted");
             }
@@ -246,6 +249,15 @@ class ApiIngestionController extends Controller
               $entry->notes = "";
 
               $entry->save();
+
+              // update entry with document id
+              $newId = $entry->id;
+              $newEntry = Entry::find($newId);
+              $newElement = $data_json;
+              $newElement['document_id'] = intval($newId);
+
+              $newEntry->element = json_encode($newElement);
+              $newEntry->save();
 
               return $this->prepareResult(true, [], $error['errors'], "Entry created");
             }
@@ -503,6 +515,15 @@ class ApiIngestionController extends Controller
             $entry->notes = $formData->notes;
             $entry->save();
             $error['files']=$imgs_errors;
+
+            // update entry with document id
+            $newId = $entry->id;
+            $newEntry = Entry::find($newId);
+            $newElement = $json_element;
+            $newElement['document_id'] = intval($newId);
+
+            $newEntry->element = json_encode($newElement);
+            $newEntry->save();
 
             return $this->prepareResult(true, $entry, $error, "Entry created");
         }

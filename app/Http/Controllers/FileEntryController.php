@@ -143,8 +143,8 @@ class FileEntryController extends Controller
       $imgSrc = Storage::disk('fullsize')->path($filename);
       $extension = pathinfo($imgSrc)['extension'];
       $extensionLower = strtolower($extension);
-      $filenameNoExtension = $filename.replace($extension, "", $filename);
-
+      $filenameNoExtension = str_replace($extension, "", $filename);
+      
       $thumbs_path = Storage::disk('thumbnails')->path($filenameNoExtension.".".$extensionLower);
       $imgDetails = getimagesize($imgSrc);
       $imgMime = $imgDetails['mime'];

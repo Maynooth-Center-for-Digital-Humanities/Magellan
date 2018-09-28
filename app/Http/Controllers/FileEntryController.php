@@ -40,7 +40,8 @@ class FileEntryController extends Controller
           $entry_format = EntryFormatFactory::create($format);
 
           $extension=$file->getClientOriginalExtension();
-          Storage::disk('local')->put($file->getFilename().'.'.$extension,  File::get($file));
+          $extensionLower = strtolower($extension);
+          Storage::disk('local')->put($file->getFilename().'.'.$extensionLower,  File::get($file));
           if($entry_format->valid($file)){
 
               // Store the file
@@ -111,10 +112,11 @@ class FileEntryController extends Controller
 
     public function store($file, $format, $user){
 
+        $extensionLower = strtolower($file->getClientOriginalExtension());
         $entry = new Uploadedfile();
         $entry->mime = $file->getClientMimeType();
         $entry->original_filename = $file->getClientOriginalName();
-        $entry->filename = $file->getFilename().'.'.$file->getClientOriginalExtension();
+        $entry->filename = $file->getFilename().'.'.$extensionLower;
         $entry->format = $format;
         $entry->user_id = $user;
         $entry->filesize = $file->getClientSize();
@@ -139,7 +141,11 @@ class FileEntryController extends Controller
 
     public function makeThumbnail($filename, $thumbSize=200) {
       $imgSrc = Storage::disk('fullsize')->path($filename);
-      $thumbs_path = Storage::disk('thumbnails')->path($filename);
+      $extension = pathinfo($imgSrc)['extension'];
+      $extensionLower = strtolower($extension);
+      $filenameNoExtension = $filename.replace($extension, "", $filename);
+
+      $thumbs_path = Storage::disk('thumbnails')->path($filenameNoExtension.".".$extensionLower);
       $imgDetails = getimagesize($imgSrc);
       $imgMime = $imgDetails['mime'];
       list($width, $height) = getimagesize($imgSrc);

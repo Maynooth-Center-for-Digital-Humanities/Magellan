@@ -121,7 +121,7 @@ class AdminController extends Controller
     else {
       $updateQuery = ['transcription_status'=>-1];
     }
-    Entry::whereId($id)->update($updateQuery);
+    Entry::find($id)->update($updateQuery);
     return $this->prepareResult(true, [], $error, "Letter transcription status updated successfully");
   }
 

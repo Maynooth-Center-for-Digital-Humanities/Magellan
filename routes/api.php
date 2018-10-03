@@ -15,9 +15,9 @@ use Illuminate\Http\Request;
 
 Route::post('/login','Auth\LoginController@accessToken');
 
-Route::post('/register/','Auth\RegisterController@register');
+Route::post('/register','Auth\RegisterController@register');
 
-Route::get('/verify-user/{code}', 'Auth\RegisterController@activateUser')->name('activate.user');
+Route::get('/verify-account/{code}', 'Auth\RegisterController@activateUser')->name('activate.user');
 
 Route::get('/rights', 'ApiIngestionController@rights');
 

@@ -42,7 +42,7 @@ class RegisterController extends Controller
      * @param  Request $request
      * @return outputTrait
      */
-    protected function register(Request $request)
+    public function register(Request $request)
     {
 
         $validatedData = $request->validate([
@@ -77,7 +77,7 @@ class RegisterController extends Controller
         }
 
         /* when email service is configured enable to line below to send mail notifications
-        * $user->notify(new UserRegisteredSuccessfully($user));
+         $user->notify(new UserRegisteredSuccessfully($user));
         */
         return $this->prepareResult(true, [], [],'New user account created successfully. Please check your email to activate your new account.');
 
@@ -93,12 +93,16 @@ class RegisterController extends Controller
        try {
            $user = app(User::class)->where('activation_code', $activationCode)->first();
            if (!$user) {
-             return $this->prepareResult(false, [], "The provided activation code doesn't match any user in our database", []);
+             return $this->prepareResult(false, $activationCode, "The provided activation code doesn't match any user in our database", []);
            }
-           $user->status = 1;
-           $user->activation_code = null;
-           $user->save();
-           auth()->login($user);
+           else if ($user->status===1) {
+             return $this->prepareResult(false, [], "This user account has already been activated. Please login to start using your account", []);
+           }
+           else {
+             $user->status = 1;
+             $user->save();
+           }
+
        } catch (\Exception $exception) {
 
            return $this->prepareResult(false, [], "Undefined error", $exception);

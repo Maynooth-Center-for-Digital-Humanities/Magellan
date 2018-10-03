@@ -19,7 +19,7 @@ Route::get('/react/', function () {
 
 Route::get('/download-xml/{filename}', 'FileEntryController@downloadXML');
 
-Route::get('/verify-user/{code}', 'Auth\RegisterController@activateUser')->name('activate.user');
+Route::get('/verify-account/{code}', 'Auth\RegisterController@activateUser')->name('activate.user');
 
 Route::post('/importer', function () {
     echo '<h1>Hello</h1>';

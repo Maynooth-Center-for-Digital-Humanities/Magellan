@@ -40,19 +40,24 @@ class LoginController extends Controller
 
         $user = User::where("email", $request->email)->first();
 
-        //Fabiano: For security reasons let's return only true or false without any hints on the type of error (pwd/username)
         if ($user) {
           $coll = array();
-          if (Hash::check($request->password, $user->password)) {
-            $coll = array(
-              "userName"=>$user->name,
-              "accessToken" => $user->createToken('ApiIngestion')->accessToken,
-              "roles"=>$user->roles
-            );
-            return $this->prepareResult(true,$coll, [], "User Verified");
-          } else {
-              return $this->prepareResult(false, [], ["password" => "Wrong password"], "Password not matched");
+          if ($user->status===0) {
+            return $this->prepareResult(false, [], ["status" => "This user account is not activated yet. To activate your account check your email for the activation email."], "This user account is not activated yet. To activate your account check your email for the activation email.");
           }
+          else {
+            if (Hash::check($request->password, $user->password)) {
+              $coll = array(
+                "userName"=>$user->name,
+                "accessToken" => $user->createToken('ApiIngestion')->accessToken,
+                "roles"=>$user->roles
+              );
+              return $this->prepareResult(true,$coll, [], "User Verified");
+            } else {
+                return $this->prepareResult(false, [], ["password" => "Wrong password"], "Password not matched");
+            }
+          }
+
         } else {
           return $this->prepareResult(false, [], ["email" => "Unable to find user"], "User not found");
         }

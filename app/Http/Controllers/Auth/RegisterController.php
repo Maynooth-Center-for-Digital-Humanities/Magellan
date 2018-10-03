@@ -95,18 +95,21 @@ class RegisterController extends Controller
            if (!$user) {
              return $this->prepareResult(false, $activationCode, "The provided activation code doesn't match any user in our database", []);
            }
-           else if ($user->status===1) {
-             return $this->prepareResult(false, [], "This user account has already been activated. Please login to start using your account", []);
-           }
            else {
-             $user->status = 1;
-             $user->save();
+             $newStatus = intval($user->status);
+             if ($newStatus===1) {
+               return $this->prepareResult(false, [], "This user account has already been activated. Please login to start using your account", []);
+             }
+             else {
+               $user->status = 1;
+               $user->save();
+             }
            }
 
        } catch (\Exception $exception) {
 
            return $this->prepareResult(false, [], "Undefined error", $exception);
        }
-       return $this->prepareResult(false, [], "User account was activated successfully. Please login to start using your new account.", []);
+       return $this->prepareResult(true, [], "User account was activated successfully. Please login to start using your new account.", []);
    }
 }

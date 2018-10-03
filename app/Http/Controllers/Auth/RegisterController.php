@@ -55,7 +55,7 @@ class RegisterController extends Controller
             $validatedData['activation_code'] = str_random(30).time();
 
             // remove when email service is added as default status is set to 0
-            $validatedData['status'] = 1;
+            //$validatedData['status'] = 1;
 
             $user = User::create($validatedData);
             $user->roles()
@@ -68,6 +68,9 @@ class RegisterController extends Controller
             if ($request->input('subscribe_to_newsletter')===true) {
               $user->rights()->sync([3],false);
             }
+
+            // send confirmation email
+            $user->notify(new UserRegisteredSuccessfully($user));
 
         } catch (\Exception $exception) {
             return $this->prepareResult(false, [], 'Unable to create new user.', $exception);

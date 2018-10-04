@@ -511,7 +511,7 @@ class ApiIngestionController extends Controller
             $entry->user_id = Auth::user()->id;
             $entry->current_version = TRUE;
             $entry->status = 0;
-            $entry->transcription_status = 0;
+            $entry->transcription_status = -1;
             $entry->notes = $formData->notes;
             $entry->save();
             $error['files']=$imgs_errors;

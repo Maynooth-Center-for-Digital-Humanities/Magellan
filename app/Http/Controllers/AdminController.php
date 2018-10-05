@@ -90,7 +90,7 @@ class AdminController extends Controller
       $pagesCompleted = 0;
       $pagesApproved = 0;
       foreach($pages as $page) {
-        if (intval($page['transcription_status'])===0) {
+        if (intval($page['transcription_status'])===-1 || ntval($page['transcription_status'])===0) {
           $pagesOpen++;
         }
         if (intval($page['transcription_status'])===1) {
@@ -101,7 +101,7 @@ class AdminController extends Controller
         }
       }
       $totalPages = count($pages);
-      $error = array("completed"=> $pagesCompleted, "approved"=>$pagesApproved);
+      $error = array("open"=>$pagesOpen, "completed"=> $pagesCompleted, "approved"=>$pagesApproved, "total"=>$totalPages);
       $updateQuery = ['element'=>json_encode($element),'status'=>0, 'transcription_status'=>0];
       if ($pagesCompleted === $totalPages) {
         $updateQuery = ['transcription_status'=>1];
@@ -817,5 +817,213 @@ class AdminController extends Controller
 
 
     return $this->prepareResult(true, $coll, [], $msg, "Request complete");
+  }
+
+  public function writeXML(Request $request, $id) {
+    $entry = Entry::where('id',$id)->first();
+    $element = json_decode($entry->element, true);
+
+    // revisors & contributors, facsimile
+    $revisors = array();
+    $contributors = array();
+    $revisorsXML = "";
+    $contributorsXML = "";
+    $facsimile = "";
+    $facsimileXML = "";
+    foreach ($element['pages'] as $page) {
+      $revName = $page['rev_name'];
+      $contributor = $page['contributor'];
+      if ($revName!=="" && !in_array($revName, $revisors)) {
+        $revisors[] = $revName;
+        $revisorsXML .= '<respStmt>
+          <resp>Editor</resp>
+          <name>'.$revName.'</name>
+        </respStmt>';
+      }
+      if ($contributor!=="" && !in_array($contributor, $contributors)) {
+        $contributors[] = $contributor;
+        $contributorsXML .= '<respStmt>
+          <resp>Contributor</resp>
+          <name>'.$contributor.'</name>
+        </respStmt>';
+      }
+      if ($page['archive_filename']!=="") {
+        $facsimile .= '<graphic url="'.$page['archive_filename'].'"/>';
+      }
+    }
+    if ($facsimile!=="") {
+      $facsimileXML = '<facsimile>
+        '.$facsimile.'
+      </facsimile>';
+    }
+    // notes
+    $notesStmt = "";
+    if ($element['description']!=="") {
+      $notesStmt = '<notesStmt>
+        <note type="summary">
+          <p>'.$element['description'].'</p>
+        </note>
+      </notesStmt>';
+    }
+    // source
+    $sourceDesc = "";
+    if ($element['source']!=="") {
+      $idno = "";
+      if ($element['doc_collection']!=="") {
+        $idno = $element['doc_collection'];
+      }
+      $sourceDesc = '<sourceDesc>
+        <msDesc>
+          <msIdentifier>
+            <repository>'.$element['source'].'</repository>
+            <idno>'.$idno.'</idno>
+          </msIdentifier>
+        </msDesc>
+      </sourceDesc>';
+    }
+    // correspondents
+    // creator
+    $creator = "";
+    $creator_location = "";
+    $date_created = "";
+    if ($element['creator']!=="") {
+      $creator = '<persName>'.$element['creator'].'</persName>';
+    }
+    if ($element['creator_location']!=="") {
+      $creator_location = '<placeName>'.$element['creator_location'].'</placeName>';
+    }
+    if ($element['date_created']!=="") {
+      $date_hr = "";
+      $dateArr = explode("-", $element['date_created']);
+      $year = $dateArr[0];
+      $month = null;
+      $day = null;
+      $months = array("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December");
+      $newMonth = "";
+      if (isset($dateArr[1])) {
+        $month = intval($dateArr[1])-1;
+        $newMonth = $months[$month];
+      }
+      if (isset($dateArr[2])) {
+        $day = $dateArr[2];
+      }
+      $date_created = '<date when="'.$element['date_created'].'">'.$day.' '.$newMonth.' '.$year.'</date>';
+    }
+    $senderXML = "";
+    if ($element['creator']!=="" || $element['creator_location']!=="" || $element['date_created']!=="") {
+      $senderXML = '<correspAction type="sent">
+        '.$creator.'
+        '.$creator_location.'
+        '.$date_created.'
+      </correspAction>';
+    }
+    // recipient
+    $recipient = "";
+    $recipient_location = "";
+    if ($element['recipient']!=="") {
+      $recipient = '<persName>'.$element['recipient'].'</persName>';
+    }
+    if ($element['recipient_location']!=="") {
+      $recipient_location = '<placeName>'.$element['recipient_location'].'</placeName>';
+    }
+    $recipientXML = "";
+    if ($element['recipient']!=="" || $element['recipient_location']!=="") {
+      $recipientXML = '<correspAction type="received">
+        '.$recipient.'
+        '.$recipient_location.'
+      </correspAction>';
+    }
+    $correspDesc = "";
+    if ($recipientXML!=="" || $senderXML!=="") {
+      $correspDesc = '<correspDesc>
+        '.$recipientXML.'
+        '.$senderXML.'
+      </correspDesc>';
+    }
+
+    // topics
+    $topicsXML = "";
+    if (count($element['topics'])>0 || $element['creator_gender']!=="") {
+      $creator_gender = "";
+      if ($element['creator_gender']!=="") {
+        $creator_gender = '<item n="gender">'.$element['creator_gender'].'</item>';
+      }
+      $error_topics = $element['topics'];
+      $topicsItems = "";
+      foreach ($element['topics'] as $topic) {
+        $topicsItems .= '<item n="tag">'.$topic['topic_name'].'</item>';
+      }
+      if ($creator_gender!=="" || $topicsItems!=="") {
+        $topicsXML = '<textClass>
+        <keywords>
+          <list>
+            '.$creator_gender.'
+            '.$topicsItems.'
+          </list>
+        </keywords>
+      </textClass>';
+      }
+    }
+
+    // language
+    $langUsage = "";
+    if ($element['language']!=="") {
+      $langUsage = '<langUsage>
+        <language>'.$element['language'].'</language>
+      </langUsage>';
+    }
+
+    $newXML = '<?oxygen RNGSchema="https://raw.githubusercontent.com/bleierr/Letters-1916-sample-files/master/plain%20corresp%20templates/template.rng" type="xml"?>
+    <TEI xmlns="http://www.tei-c.org/ns/1.0">
+      <teiHeader xml:id="L1916_'.$element['document_id'].'"">
+        <fileDesc>
+          <titleStmt>
+            <title>'.$element['title'].'</title>
+            <author>'.$element['creator'].'</author>
+          </titleStmt>
+          <editionStmt>
+            <edition>The Letters of 1916</edition>
+            <respStmt>
+              <resp>General Editor</resp>
+              <name xml:id="SS">Susan Schreibman</name>
+            </respStmt>
+            '.$revisorsXML.'
+            '.$contributorsXML.'
+          </editionStmt>
+          <publicationStmt>
+            <publisher>
+              <address>
+                <name>An Foras Feasa</name>
+                <orgName>Maynooth University</orgName>
+                <placeName>
+                  <settlement>Maynooth</settlement>
+                  <region>Co. Kildare</region>
+                  <country>IRE</country>
+                </placeName>
+              </address>
+            </publisher>
+            <idno>L1916_'.$element['document_id'].'</idno>
+            <availability status="restricted">
+              <p>All rights reserved. No part of this image may be reproduced, distributed, or
+    transmitted in any form or by any means, including photocopying, recording, or other
+    electronic or mechanical methods, without the prior written permission of the institutional
+    or private owner of the image and the Letters of 1916 project. For permission requests,
+    write to the Letters of 1916 at letters1916@gmail.com. </p>
+            </availability>
+            <date when="'.$entry->created_at.'">'.$entry->created_at.'</date>
+          </publicationStmt>
+          '.$notesStmt.'
+          '.$sourceDesc.'
+        </fileDesc>
+        <profileDesc>
+          '.$correspDesc.'
+          '.$topicsXML.'
+          '.$langUsage.'
+        </profileDesc>
+      </teiHeader>
+      '.$facsimileXML.'
+    </TEI>';
+
+    return $this->prepareResult(true, $entry, $newXML, $element, "Request complete");
   }
 }

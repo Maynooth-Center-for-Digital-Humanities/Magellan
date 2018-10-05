@@ -58,7 +58,6 @@ Route::get('/date_created/','ApiIngestionController@date_created');
 
 // test API calls
 Route::get('/test-api/','ApiIngestionController@testAPI');
-
 // mailchimp
 Route::post('/subscribe-to-newsletter/','UserController@subscribeToMailchimp');
 
@@ -140,6 +139,9 @@ Route::group(['middleware' => ['admin','auth:api']], function(){
   Route::post('/admin/available-user-role/{id}','UserController@updateAvailableUserRoleAdmin');
 
   Route::delete('/admin/user/{id}','UserController@deleteUser');
-  Route::delete('/admin/available-user-role/{id}','UserController@deleteAvailableUserRoleAdmin');
+  Route::delete('/admin/available-user-role/{id}','UserController@deleteAvailableUserRoleAdmin');  
+
+  Route::get('/write-xml/{id}','AdminController@writeXML');
+
 
 });

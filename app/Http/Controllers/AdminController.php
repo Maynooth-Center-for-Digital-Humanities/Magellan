@@ -90,7 +90,7 @@ class AdminController extends Controller
       $pagesCompleted = 0;
       $pagesApproved = 0;
       foreach($pages as $page) {
-        if (intval($page['transcription_status'])===-1 || ntval($page['transcription_status'])===0) {
+        if (intval($page['transcription_status'])===-1 || intval($page['transcription_status'])===0) {
           $pagesOpen++;
         }
         if (intval($page['transcription_status'])===1) {

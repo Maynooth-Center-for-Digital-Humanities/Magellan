@@ -830,6 +830,8 @@ class AdminController extends Controller
     $contributorsXML = "";
     $facsimile = "";
     $facsimileXML = "";
+    $transcriptionXML = "";
+    $transcription = "";
     foreach ($element['pages'] as $page) {
       $revName = $page['rev_name'];
       $contributor = $page['contributor'];
@@ -848,13 +850,33 @@ class AdminController extends Controller
         </respStmt>';
       }
       if ($page['archive_filename']!=="") {
-        $facsimile .= '<graphic url="'.$page['archive_filename'].'"/>';
+        $facsimile .= '<graphic xml:id="L1916_960_img_'.$page['page_id'].'" url="'.$page['archive_filename'].'"/>';
+      }
+      if ($page['transcription']!=="") {
+        $pb = '<pb n="'.$page['page_id'].'" facs="#L1916_960_img_'.$page['page_id'].'"/>';
+        $typeAttr = "";
+        if ($page['page_type']!=="") {
+          $typeAttr = ' type="'.$page['page_type'].'" ';
+        }
+        $transcription .= $pb.'
+        <text '.$typeAttr.'>
+          <body>'
+          .$page['transcription']
+        .'  </body>
+        </text>';
       }
     }
     if ($facsimile!=="") {
       $facsimileXML = '<facsimile>
         '.$facsimile.'
       </facsimile>';
+    }
+    if ($transcription!=="") {
+      $transcriptionXML = '<text>
+        <group>
+          '.$transcription.'
+        </group>
+      </text>';
     }
     // notes
     $notesStmt = "";
@@ -1022,6 +1044,7 @@ class AdminController extends Controller
         </profileDesc>
       </teiHeader>
       '.$facsimileXML.'
+      '.$transcriptionXML.'
     </TEI>';
 
     return $this->prepareResult(true, $entry, $newXML, $element, "Request complete");

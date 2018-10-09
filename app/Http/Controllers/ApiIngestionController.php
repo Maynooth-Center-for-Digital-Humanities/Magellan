@@ -823,6 +823,8 @@ class ApiIngestionController extends Controller
 
         $sanitize_sentence = (filter_var(strtolower($sentence), FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH));
 
+        DB::connection()->getPdo()->quote($sanitize_sentence);
+
         $where_q = [
           ['status','=',1],
           ['current_version','=',1],

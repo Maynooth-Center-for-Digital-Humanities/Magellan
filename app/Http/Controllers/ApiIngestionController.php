@@ -821,14 +821,14 @@ class ApiIngestionController extends Controller
             $page = $request->input('page');
         }
 
-        $sanitize_sentence = mysqli_real_escape_string(filter_var(strtolower($sentence), FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH));
+        $sanitize_sentence = addslashes(filter_var(strtolower($sentence), FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH));
 
         $where_q = [
           ['status','=',1],
           ['current_version','=',1],
           ['transcription_status','=',2],
         ];
-
+        DB::enableQueryLog();
         $match_sql = " (LOWER(`element`->>'$.title') like '%".$sanitize_sentence."%' or LOWER(`element`->>'$.description') like '%".$sanitize_sentence."%' or LOWER(`fulltext`) like '%".$sanitize_sentence."%' )";
         $entries = Entry::select('entry.*')
           ->where($where_q)
@@ -837,7 +837,7 @@ class ApiIngestionController extends Controller
           ->orderBy($sort_col, $sort_dir)
           ->paginate($paginate);
 
-        return $this->prepareResult(true, $entries, [], "Results created");
+        return $this->prepareResult(true, $entries, DB::getQueryLog(), "Results created");
 
     }
 

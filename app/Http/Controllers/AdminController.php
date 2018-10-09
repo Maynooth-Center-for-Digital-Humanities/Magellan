@@ -260,7 +260,7 @@ class AdminController extends Controller
           $page = $request->input('page');
       }
 
-      $sanitize_sentence = mysqli_real_escape_string(filter_var(strtolower($sentence), FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH));
+      $sanitize_sentence = (filter_var(strtolower($sentence), FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH));
 
       $where_q = [];
       $where_q[] = ['entry.current_version','=','1'];
@@ -278,6 +278,7 @@ class AdminController extends Controller
       }
 
       $match_sql = "( LOWER(`element`->>'$.title') like '%".$sanitize_sentence."%' or LOWER(`element`->>'$.description') like '%".$sanitize_sentence."%' or LOWER(`fulltext`) like '%".$sanitize_sentence."%' )";
+      DB::enableQueryLog();
       $entries = Entry::select('entry.*')
         ->where($where_q)
         ->whereRaw(DB::Raw($match_sql))
@@ -285,7 +286,7 @@ class AdminController extends Controller
         ->orderBy($sort_col, $sort_dir)
         ->paginate($paginate);
 
-      return $this->prepareResult(true, $entries, [], "Results created");
+      return $this->prepareResult(true, $entries, DB::getQueryLog(), "Results created");
 
   }
 

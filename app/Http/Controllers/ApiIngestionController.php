@@ -821,7 +821,7 @@ class ApiIngestionController extends Controller
             $page = $request->input('page');
         }
 
-        $sanitize_sentence = addslashes(filter_var(strtolower($sentence), FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH));
+        $sanitize_sentence = (filter_var(strtolower($sentence), FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH));
 
         $where_q = [
           ['status','=',1],

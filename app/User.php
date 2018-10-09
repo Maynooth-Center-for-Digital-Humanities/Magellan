@@ -30,7 +30,7 @@ class User extends Authenticatable
           $user->roles()->sync([]);
           $user->transcriptions()->sync([]);
           $user->entryLock()->sync([]);
-          $user->rights()->sync([]);          
+          $user->rights()->sync([]);
         });
     }
 

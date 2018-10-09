@@ -19,6 +19,11 @@ Route::post('/register','Auth\RegisterController@register');
 
 Route::get('/verify-account/{code}', 'Auth\RegisterController@activateUser')->name('activate.user');
 
+Route::post('/password-reset-email/','Auth\ForgotPasswordController@passwordResetEmail');
+
+Route::post('/password-reset','Auth\ResetPasswordController@passwordReset');
+
+
 Route::get('/rights', 'ApiIngestionController@rights');
 
 Route::get('file', 'FileEntryController@index');
@@ -139,7 +144,7 @@ Route::group(['middleware' => ['admin','auth:api']], function(){
   Route::post('/admin/available-user-role/{id}','UserController@updateAvailableUserRoleAdmin');
 
   Route::delete('/admin/user/{id}','UserController@deleteUser');
-  Route::delete('/admin/available-user-role/{id}','UserController@deleteAvailableUserRoleAdmin');  
+  Route::delete('/admin/available-user-role/{id}','UserController@deleteAvailableUserRoleAdmin');
 
   Route::get('/write-xml/{id}','AdminController@writeXML');
 

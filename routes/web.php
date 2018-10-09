@@ -21,6 +21,8 @@ Route::get('/download-xml/{filename}', 'FileEntryController@downloadXML');
 
 Route::get('/verify-account/{code}', 'Auth\RegisterController@activateUser')->name('activate.user');
 
+Route::get('password-reset/{token}', 'Auth\ResetPasswordController@resetForm')->name('password.reset.token');
+
 Route::post('/importer', function () {
     echo '<h1>Hello</h1>';
 });

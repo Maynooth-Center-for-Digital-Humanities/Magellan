@@ -260,7 +260,7 @@ class AdminController extends Controller
           $page = $request->input('page');
       }
 
-      $sanitize_sentence = (filter_var(strtolower($sentence), FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH));
+      $sanitize_sentence = urldecode(strtolower($sentence));
 
       $where_q = [];
       $where_q[] = ['entry.current_version','=','1'];
@@ -277,16 +277,19 @@ class AdminController extends Controller
         $where_q[] = $transcription_status_q;
       }
 
-      $match_sql = "( LOWER(`element`->>'$.title') like '%".$sanitize_sentence."%' or LOWER(`element`->>'$.description') like '%".$sanitize_sentence."%' or LOWER(`fulltext`) like '%".$sanitize_sentence."%' )";
-      DB::enableQueryLog();
       $entries = Entry::select('entry.*')
         ->where($where_q)
-        ->whereRaw(DB::Raw($match_sql))
+        ->where(function($q) use($sanitize_sentence) {
+            $q
+              ->whereRaw("LOWER(`element`->>'$.title') like ?", '%'.$sanitize_sentence.'%')
+              ->orWhereRaw("LOWER(`element`->>'$.description') like ?",'%'.$sanitize_sentence.'%')
+              ->orWhereRaw("LOWER(`fulltext`) like ?",'%'.$sanitize_sentence.'%');
+        })
         ->groupBy('id')
         ->orderBy($sort_col, $sort_dir)
         ->paginate($paginate);
 
-      return $this->prepareResult(true, $entries, DB::getQueryLog(), "Results created");
+      return $this->prepareResult(true, $entries, [], "Results created");
 
   }
 
@@ -349,7 +352,7 @@ class AdminController extends Controller
         $boolean_operator = $queryDecode['boolean_operator'];
 
         if ($type!=="topics") {
-          $sanitize_value = filter_var(strtolower($value), FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH);
+          $sanitize_value = urldecode(strtolower(addslashes($value)));
           $sanitize_query_value = $sanitize_value;
           if ($sanitize_value!=="") {
             $sanitize_query_value = "'".$sanitize_value."'";
@@ -448,7 +451,7 @@ class AdminController extends Controller
         $error = "Please provide a valid search query";
       }
 
-      return $this->prepareResult(true, $entries, $case, $entry_ids);
+      return $this->prepareResult(true, $entries, [], $entry_ids);
 
   }
 

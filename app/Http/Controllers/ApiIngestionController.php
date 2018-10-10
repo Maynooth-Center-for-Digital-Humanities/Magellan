@@ -821,23 +821,27 @@ class ApiIngestionController extends Controller
             $page = $request->input('page');
         }
 
-        $sanitize_sentence = (filter_var(strtolower($sentence), FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_HIGH));
+        $sanitize_sentence = urldecode(strtolower($sentence));
 
         $where_q = [
           ['status','=',1],
           ['current_version','=',1],
           ['transcription_status','=',2],
         ];
-        DB::enableQueryLog();
-        $match_sql = " (LOWER(`element`->>'$.title') like '%".$sanitize_sentence."%' or LOWER(`element`->>'$.description') like '%".$sanitize_sentence."%' or LOWER(`fulltext`) like '%".$sanitize_sentence."%' )";
+
         $entries = Entry::select('entry.*')
           ->where($where_q)
-          ->whereRaw(DB::Raw($match_sql))
+          ->where(function($q) use($sanitize_sentence) {
+              $q
+                ->whereRaw("LOWER(`element`->>'$.title') like ?", '%'.$sanitize_sentence.'%')
+                ->orWhereRaw("LOWER(`element`->>'$.description') like ?",'%'.$sanitize_sentence.'%')
+                ->orWhereRaw("LOWER(`fulltext`) like ?",'%'.$sanitize_sentence.'%');
+          })
           ->groupBy('id')
           ->orderBy($sort_col, $sort_dir)
           ->paginate($paginate);
 
-        return $this->prepareResult(true, $entries, DB::getQueryLog(), "Results created");
+        return $this->prepareResult(true, $entries, [], "Results created");
 
     }
 

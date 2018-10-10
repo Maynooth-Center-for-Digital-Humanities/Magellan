@@ -37,7 +37,7 @@ class EntryFormat implements EntryFormatInterface
         'pages.*.page_type'=>'nullable|string|max:50',
         'pages.*.rev_id'=>'integer',
         'pages.*.rev_name'=>'string|max:255',
-        'pages.*.transcription'=>'string',
+        'pages.*.transcription'=>'nullable|string',
         'pages.*.transcription_status'=>'integer',
         'recipient'=>'nullable|max:255',
         'recipient_location'=>'max:255',

@@ -1467,6 +1467,7 @@ class ApiIngestionController extends Controller
           ->where([
             ['status','=', $status],
             ['transcription_status','>', -1],
+            ['current_version','=',1]
             ])
           ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.source'))) IN (".$new_sources.")"))
           ->get();
@@ -1492,6 +1493,7 @@ class ApiIngestionController extends Controller
           ->where([
             ['status','=', $status],
             ['transcription_status','>', -1],
+            ['current_version','=',1]
             ])
           ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator'))) IN (".$new_authors.")"))
           ->get();
@@ -1517,6 +1519,7 @@ class ApiIngestionController extends Controller
           ->where([
             ['status','=', $status],
             ['transcription_status','>', -1],
+            ['current_version','=',1]
             ])
           ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.creator_gender'))) IN (".$new_genders.")"))
           ->get();
@@ -1542,6 +1545,7 @@ class ApiIngestionController extends Controller
           ->where([
             ['status','=', $status],
             ['transcription_status','>', -1],
+            ['current_version','=',1]
             ])
           ->whereRaw(DB::raw("TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.language'))) IN (".$new_languages.")"))
           ->get();
@@ -1571,6 +1575,7 @@ class ApiIngestionController extends Controller
           ->where([
             ['status','=', $status],
             ['transcription_status','>', -1],
+            ['current_version','=',1]
             ])
           ->whereBetween(DB::raw("CAST(TRIM(JSON_UNQUOTE(JSON_EXTRACT(element, '$.date_created'))) AS DATE)"), [$date_start, $date_end])
           ->get();
@@ -1599,6 +1604,7 @@ class ApiIngestionController extends Controller
             ->where([
               ['status','=', $status],
               ['transcription_status','>', -1],
+              ['current_version','=',1]
               ])
             ->orderBy('completed',$sort)
             ->paginate($paginate);
@@ -1610,6 +1616,7 @@ class ApiIngestionController extends Controller
           $items = Entry::where([
             ['status','=', $status],
             ['transcription_status','>', -1],
+            ['current_version','=',1]
             ])
           ->orderBy('completed',$sort)
           ->paginate($paginate);

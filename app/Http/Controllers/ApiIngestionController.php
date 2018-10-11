@@ -251,7 +251,12 @@ class ApiIngestionController extends Controller
               $entry->save();
 
               // update entry with document id
-              $newId = $entry->id;
+              if ($document_id>0) {
+                $newId = $document_id;
+              }
+              else {
+                $newId = $entry->id;
+              }
               $newEntry = Entry::find($newId);
               $newElement = $data_json;
               $newElement['document_id'] = intval($newId);

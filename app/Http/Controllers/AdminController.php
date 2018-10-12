@@ -16,6 +16,8 @@ use App\Helpers\PrepareOutputTrait;
 use App\Http\Controllers\FileEntryController;
 use Illuminate\Pagination\LengthAwarePaginator as Paginator;
 
+use App\EntryFormats\Provider\xml_tei_letter19xx\XML_utilities as XML;
+
 class AdminController extends Controller
 {
   use PrepareOutputTrait;
@@ -823,7 +825,7 @@ class AdminController extends Controller
     return $this->prepareResult(true, $coll, [], $msg, "Request complete");
   }
 
-  public function writeXML(Request $request, $id) {
+  public function generateXML(Request $request, $id) {
     $entry = Entry::where('id',$id)->first();
     $element = json_decode($entry->element, true);
 
@@ -902,6 +904,7 @@ class AdminController extends Controller
         <msDesc>
           <msIdentifier>
             <repository>'.$element['source'].'</repository>
+            <collection type="public"/>
             <idno>'.$idno.'</idno>
           </msIdentifier>
         </msDesc>
@@ -961,7 +964,7 @@ class AdminController extends Controller
     }
     $correspDesc = "";
     if ($recipientXML!=="" || $senderXML!=="") {
-      $correspDesc = '<correspDesc>
+      $correspDesc = '<correspDesc xml:id="corresp1">
         '.$recipientXML.'
         '.$senderXML.'
       </correspDesc>';
@@ -994,14 +997,17 @@ class AdminController extends Controller
     // language
     $langUsage = "";
     if ($element['language']!=="") {
+      $ident = strtolower(substr($element['language'], 0, 2));
       $langUsage = '<langUsage>
-        <language>'.$element['language'].'</language>
+        <language ident="'.$ident.'">'.$element['language'].'</language>
       </langUsage>';
     }
 
+    $createdAt = date('Y-m-d\TH:i:s', strtotime($entry->created_at));
+
     $newXML = '<?oxygen RNGSchema="https://raw.githubusercontent.com/bleierr/Letters-1916-sample-files/master/plain%20corresp%20templates/template.rng" type="xml"?>
     <TEI xmlns="http://www.tei-c.org/ns/1.0">
-      <teiHeader xml:id="L1916_'.$element['document_id'].'"">
+      <teiHeader xml:id="L1916_'.$element['document_id'].'">
         <fileDesc>
           <titleStmt>
             <title>'.$element['title'].'</title>
@@ -1036,7 +1042,7 @@ class AdminController extends Controller
     or private owner of the image and the Letters of 1916 project. For permission requests,
     write to the Letters of 1916 at letters1916@gmail.com. </p>
             </availability>
-            <date when="'.$entry->created_at.'">'.$entry->created_at.'</date>
+            <date when="'.$createdAt.'">'.$entry->created_at.'</date>
           </publicationStmt>
           '.$notesStmt.'
           '.$sourceDesc.'
@@ -1051,6 +1057,24 @@ class AdminController extends Controller
       '.$transcriptionXML.'
     </TEI>';
 
-    return $this->prepareResult(true, $entry, $newXML, $element, "Request complete");
+    $newfileName = $element['document_id'].".xml";
+    $storeFile = Storage::disk('xml_public')->put($newfileName, $newXML);
+
+    $errors = "";
+    $xml_path = Storage::disk('xml_public')->path($newfileName);
+    $xml = new \DOMDocument();
+    $xml->load($xml_path);
+    $rng_file  = "app/EntryFormats/Provider/xml_tei_letter19xx/schema/template.rng";
+    if (file_exists($rng_file)){
+        // validate the xml file against the rng schema
+        $errors = $xml->relaxNGValidate($rng_file);
+    }
+    $data = array(
+      'url'=> '/generated-xml/'.$newfileName,
+      'filename'=>$newfileName,
+      'fullpath'=>$xml_path
+    );
+
+    return $this->prepareResult(true, $data, $errors, "XML generated successfully");
   }
 }

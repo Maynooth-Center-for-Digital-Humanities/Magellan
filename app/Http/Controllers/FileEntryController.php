@@ -139,6 +139,15 @@ class FileEntryController extends Controller
       return response()->download($file, $original_filename, $headers);
     }
 
+    public function generatedXML($filename) {
+      $file = Storage::disk('xml_public')->url($filename);
+      $headers = array(
+              'Content-Type: application/xml',
+      );
+
+      return response()->download($file, $filename, $headers);
+    }
+
     public function makeThumbnail($filename, $thumbSize=200) {
       $imgSrc = Storage::disk('fullsize')->path($filename);
       $extension = pathinfo($imgSrc)['extension'];

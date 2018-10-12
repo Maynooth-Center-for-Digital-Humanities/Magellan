@@ -19,6 +19,8 @@ Route::get('/react/', function () {
 
 Route::get('/download-xml/{filename}', 'FileEntryController@downloadXML');
 
+Route::get('/generated-xml/{filename}', 'FileEntryController@generatedXML');
+
 Route::get('/verify-account/{code}', 'Auth\RegisterController@activateUser')->name('activate.user');
 
 Route::get('password-reset/{token}', 'Auth\ResetPasswordController@resetForm')->name('password.reset.token');

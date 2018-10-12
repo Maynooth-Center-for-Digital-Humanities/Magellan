@@ -146,7 +146,7 @@ Route::group(['middleware' => ['admin','auth:api']], function(){
   Route::delete('/admin/user/{id}','UserController@deleteUser');
   Route::delete('/admin/available-user-role/{id}','UserController@deleteAvailableUserRoleAdmin');
 
-  Route::get('/write-xml/{id}','AdminController@writeXML');
+  Route::get('/generate-xml/{id}','AdminController@generateXML');
 
 
 });

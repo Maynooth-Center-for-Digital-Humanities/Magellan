@@ -140,7 +140,7 @@ class FileEntryController extends Controller
     }
 
     public function generatedXML($filename) {
-      $file = Storage::disk('xml_public')->url($filename);
+      $file = storage_path(). "/app/archive/xml/public/".$filename;
       $headers = array(
               'Content-Type: application/xml',
       );

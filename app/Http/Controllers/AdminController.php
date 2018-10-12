@@ -1061,14 +1061,14 @@ class AdminController extends Controller
     $storeFile = Storage::disk('xml_public')->put($newfileName, $newXML);
 
     $errors = "";
-    $xml_path = Storage::disk('xml_public')->path($newfileName);
+    /*$xml_path = Storage::disk('xml_public')->path($newfileName);
     $xml = new \DOMDocument();
     $xml->load($xml_path);
     $rng_file  = "app/EntryFormats/Provider/xml_tei_letter19xx/schema/template.rng";
     if (file_exists($rng_file)){
         // validate the xml file against the rng schema
         $errors = $xml->relaxNGValidate($rng_file);
-    }
+    }*/
     $data = array(
       'url'=> '/generated-xml/'.$newfileName,
       'filename'=>$newfileName,

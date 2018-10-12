@@ -1071,8 +1071,7 @@ class AdminController extends Controller
     }*/
     $data = array(
       'url'=> '/generated-xml/'.$newfileName,
-      'filename'=>$newfileName,
-      'fullpath'=>$xml_path
+      'filename'=>$newfileName
     );
 
     return $this->prepareResult(true, $data, $errors, "XML generated successfully");

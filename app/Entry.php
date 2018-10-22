@@ -5,6 +5,7 @@ namespace App;
 use Illuminate\Database\Eloquent\Model;
 use App\Uploadedfile;
 use App\EntryTopic;
+use App\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
@@ -47,16 +48,25 @@ class Entry extends Model
     }
 
     public function deleteEntry($entry, $auth_user_id) {
+      $user = null;
+      $response = array();
       if (intval($auth_user_id)===0) {
         $error = "You do not have permission to delete this letter";
-        return $error;
+        $response['status'] = false;
+        $response['error'] = $error;
+        $response['msg'] = '';
+        return $response;
       }
+      $user = User::where('id',$auth_user_id)->first();
       $entry_id = $entry->id;
       $current_user_id = $auth_user_id;
       $create_user_id = $entry->user_id;
-      if ($current_user_id!==$create_user_id) {
+      if (!$user->isAdmin() && $current_user_id!==$create_user_id) {
         $error = "You do not have permission to delete this letter";
-        return $error;
+        $response['status'] = false;
+        $response['error'] = $error;
+        $response['msg'] = '';
+        return $response;
       }
       $element = json_decode($entry->element, true);
       // delete pages
@@ -76,8 +86,11 @@ class Entry extends Model
       }
       // delete entry
       $entry->delete();
-
-      return "Entry deleted successfully";
+      $msg = "Entry deleted successfully";
+      $response['status'] = true;
+      $response['msg'] = $msg;
+      $response['error'] = '';
+      return $response;
     }
 
     public function transcriptionUsers() {

@@ -760,7 +760,8 @@ class ApiIngestionController extends Controller
       $entry = Entry::where('id', $id)->first();
       $response = $entry->deleteEntry($entry, Auth::user()->id);
 
-      return $this->prepareResult(true, $response, $error, "Letter deleted successfully");
+      return $this->prepareResult($response['status'], [], $response['error'], $response['msg']);
+
     }
 
     public function removeTranscriptionAssociation(Request $request) {

@@ -337,23 +337,44 @@ class ApiIngestionController extends Controller
 
     }
 
-    public function testAPI() {
-        $item_document_ids = array();
-        $items = Entry::select('element->document_id as id')->orderBy('element->document_id', 'asc')->get();$ids = "";
-      	$i=0;
-        $ids_array = [];
-        foreach($items as $item) {
-          $id = intval($item['id']);
-          if (!in_array($id, $ids_array)) {
-            $ids_array[] = $id;
-            if ($i>0) {
-      			 $ids .= ",";
-      			}
-      			$ids .= $id;
-            $i++;
-          }
-        }
-        return $this->prepareResult(true, $ids, count($ids_array), "Ids");
+    public function testAPI(Request $request) {
+      $status = null;
+      $transcription_status = null;
+      $current_version = null;
+      $paginate = 100;
+      $page = 1;
+      if ($request->input('status')!=="") {
+        $status = $request->input('status');
+      }
+      if ($request->input('transcription_status')!=="") {
+        $transcription_status = $request->input('transcription_status');
+      }
+      if ($request->input('current_version')!=="") {
+        $current_version = $request->input('current_version');
+      }
+      if ($request->input('paginate')!=="") {
+        $paginate = $request->input('paginate');
+      }
+      if ($request->input('page')!=="") {
+        $page = $request->input('page');
+      }
+
+      $whereQuery = array();
+      if ($status!==null) {
+        $whereQuery[] = array("status", "=", $status);
+      }
+      if ($transcription_status!==null) {
+        $whereQuery[] = array("transcription_status", "=", $transcription_status);
+      }
+      if ($current_version!==null) {
+        $whereQuery[] = array("current_version", "=", $current_version);
+      }
+
+      $coll = Entry::where($whereQuery)
+        ->orderBy('id')
+        ->paginate($paginate, ['*'], 'page',$page);
+
+      return $this->prepareResult(true, $coll, [], "");
     }
 
     public function uploadLetter(Request $request,$id) {

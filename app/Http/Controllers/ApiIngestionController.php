@@ -373,7 +373,7 @@ class ApiIngestionController extends Controller
       $coll = Entry::where($whereQuery)
         ->orderBy('id')
         ->paginate($paginate, ['*'], 'page',$page);
-
+        
       return $this->prepareResult(true, $coll, [], "");
     }
 

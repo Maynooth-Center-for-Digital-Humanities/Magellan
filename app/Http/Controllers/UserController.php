@@ -9,6 +9,7 @@ use App\Uploadedfile;
 use App\Role;
 use App\User;
 use App\Helpers\PrepareOutputTrait;
+use Illuminate\Support\Str;
 use Illuminate\Pagination\LengthAwarePaginator as Paginator;
 
 class UserController extends Controller
@@ -148,9 +149,10 @@ class UserController extends Controller
     $user = Auth::user();
     $response = [];
 
+    $new_email = Str::random(32)."@test.com";
     if (!$user->isAdmin()) {
       $user['name'] = "Anonymous user";
-      $user['email'] = "";
+      $user['email'] = $new_email;
       $user['password'] = "";
       $user->save();
       $user->roles()->sync([]);

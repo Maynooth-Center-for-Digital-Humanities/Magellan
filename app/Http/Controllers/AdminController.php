@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use App\Uploadedfile;
 use App\Entry;
+use App\User;
 use App\EntryTopic;
 use App\Pages as Pages;
 use App\EntryFormats as EntryFormats;
@@ -787,6 +788,8 @@ class AdminController extends Controller
       $coll['notes'] = $entry->notes;
       $coll['entry'] = $entry;
       $file_id = $entry->uploadedfile_id;
+      $uploader = User::where('id','=', $entry->user_id)->first();
+      $coll['uploader']=$uploader;
       if ($file_id!==null) {
         $file = Uploadedfile::select('id', 'filename', 'original_filename')
             ->where('id',$file_id)->get();

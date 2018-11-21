@@ -47,6 +47,7 @@ Route::get('/topicsbyid/{ids}','ApiIngestionController@viewtopicsbyid');
 
 Route::get('/indexfiltered/','ApiIngestionController@indexfiltered');
 Route::get('/transcriptionsdeskfiltered/','ApiIngestionController@transcriptionsDeskfiltered');
+Route::get('/transcriptionsdeskfilteredfilters/','ApiIngestionController@transcriptionDeskFilteredFilters');
 
 Route::get('/indexfilteredfilters/','ApiIngestionController@indexfilteredFilters');
 

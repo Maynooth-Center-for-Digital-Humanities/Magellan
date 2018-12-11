@@ -238,12 +238,11 @@ class UserController extends Controller
         $users = User::orderBy('name', $sort)->paginate($paginate);
       }
       else if ($group>0) {
-        $role_users = array();
-        $role = Role::where('id',$group);
-        foreach($role->users as $role_user) {
-          $role_users[]=$role_user->id;
-        }
-        $users = User::whereIn('id', $role_users)->orderBy('name', $sort)->paginate($paginate);
+        $role_ids = array();
+        $role = Role::where('id', $group)->get();
+        $users = User::has(App/Role, function($q) {
+          $q->where('role_id', '=', $group);
+        })->orderBy('name', $sort)->paginate($paginate);
       }
     }
     else {
@@ -257,19 +256,23 @@ class UserController extends Controller
       }
       else {
         $role_users = array();
-        $role = Role::where('id', $group);
+        $role = Role::where('id', $group)->get();
         foreach($role->users as $role_user) {
           $role_users[]=$role_user->id;
         }
         if ($type==="Name") {
-          $users = User::where('name','like','%'.$term.'%')->whereIn('id', $role_users)->orderBy('name', $sort)->paginate($paginate);
+          $users = User::where('name','like','%'.$term.'%')
+          ->whereHas(Role, function($q){
+            $q->where('role_id','in',$role_users);
+          })->orderBy('name', $sort)->paginate($paginate);
         }
         else if ($type==="Email") {
-          $users = User::where('email','like','%'.$term.'%')->whereIn('id', $role_users)->orderBy('name', $sort)->paginate($paginate);
+          //$users = User::where('email','like','%'.$term.'%')
+        //->whereHas('id', $role_users)->orderBy('name', $sort)->paginate($paginate);
         }
       }
     }
-    return $this->prepareResult(true, $users, [], "All users");
+    return $this->prepareResult(true, $users, $role, "All users");
   }
 
   public function getUser(Request $request, $id) {

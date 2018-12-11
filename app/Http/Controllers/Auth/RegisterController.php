@@ -10,6 +10,9 @@ use App\User;
 use App\Role;
 use App\Helpers\PrepareOutputTrait;
 
+use Illuminate\Support\Facades\Mail;
+use App\Mail\volunteerIreland;
+
 class RegisterController extends Controller
 {
     /*
@@ -67,6 +70,10 @@ class RegisterController extends Controller
             }
             if ($request->input('subscribe_to_newsletter')===true) {
               $user->rights()->sync([3],false);
+            }
+
+            if ($request->input('volunteer_ireland')===true) {
+              Mail::to('info@volunteerkildare.ie')->send(new volunteerIreland());
             }
 
             // send confirmation email

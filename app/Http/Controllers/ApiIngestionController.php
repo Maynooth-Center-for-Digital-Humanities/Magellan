@@ -196,6 +196,7 @@ class ApiIngestionController extends Controller
 
     public function showLetters(Request $request, $page=0, $limit=500)
     {
+        $skip = intval($page)*intval($limit);
 
         $entries = DB::table('entry')
           ->select('entry.element')

@@ -201,7 +201,7 @@ class ApiIngestionController extends Controller
         $entries = DB::table('entry')
           ->select('entry.element')
           ->where('current_version','1')
-          ->skip($page)
+          ->skip($skip)
           ->take($limit)
           ->get();
 

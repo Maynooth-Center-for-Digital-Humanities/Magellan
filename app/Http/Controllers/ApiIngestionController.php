@@ -194,6 +194,24 @@ class ApiIngestionController extends Controller
 
     }
 
+    public function showLetters(Request $request, $page=0, $limit=500)
+    {
+
+        $entries = DB::table('entry')
+          ->select('entry.element')
+          ->where('current_version','1')
+          ->skip($page)
+          ->take($limit)
+          ->get();
+
+
+        $msg = "Entries found";
+        $status = true;
+
+        return $this->prepareResult($status, $entries, [], $msg, "Request complete");
+
+    }
+
     public function store(Request $request)
     {
         $error = false;

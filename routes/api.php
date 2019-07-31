@@ -37,6 +37,8 @@ Route::get('/show/{id}','ApiIngestionController@show');
 
 Route::get('/show-letter/{id}','ApiIngestionController@showLetter');
 
+Route::get('/show-letters/{page}/{limit}','ApiIngestionController@showLetters');
+
 Route::get('/fullsearch/{sentence}','ApiIngestionController@fullsearch');
 
 Route::get('/search/{expr}','ApiIngestionController@search');
